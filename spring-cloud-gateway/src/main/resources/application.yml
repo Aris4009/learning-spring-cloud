@@ -1,0 +1,14 @@
+## nacos 配置
+nacos:
+  config:
+    server-addr: test.nacos.com
+  discovery:
+    server-addr: test.nacos.com
+
+## spring-cloud 配置
+spring:
+  cloud:
+    gateway:
+      routes:
+    -id: method_route
+      url:

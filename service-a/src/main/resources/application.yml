@@ -1,0 +1,15 @@
+## nacos 配置
+nacos:
+  config:
+    server-addr: test.nacos.com
+  discovery:
+    server-addr: test.nacos.com
+
+server:
+  port: 8001
+spring:
+  application:
+    name: service-a
+  main:
+    banner-mode: off
+    log-startup-info: false

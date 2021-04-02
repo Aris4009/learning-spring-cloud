@@ -23,13 +23,13 @@ public final class Response<T> {
 
 	private String timestamp;
 
-	private Object param;
-
 	/**
 	 * 返回通用响应对象
 	 * 
-	 * @param data 响应体
-	 * @param <T>  泛型参数
+	 * @param data
+	 *            响应体
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	public static <T> Response<T> ok(T data) {
@@ -41,9 +41,12 @@ public final class Response<T> {
 	/**
 	 * 返回通用响应对象
 	 * 
-	 * @param data    响应体
-	 * @param request 请求体
-	 * @param <T>     泛型参数
+	 * @param data
+	 *            响应体
+	 * @param request
+	 *            请求体
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	public static <T> Response<T> ok(T data, HttpServletRequest request) {
@@ -53,10 +56,14 @@ public final class Response<T> {
 	/**
 	 * 返回通用响应对象
 	 *
-	 * @param data    响应体
-	 * @param request 请求体
-	 * @param msg     响应消息
-	 * @param <T>     泛型参数
+	 * @param data
+	 *            响应体
+	 * @param request
+	 *            请求体
+	 * @param msg
+	 *            响应消息
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	public static <T> Response<T> ok(T data, HttpServletRequest request, String[] msg) {
@@ -74,9 +81,12 @@ public final class Response<T> {
 	/**
 	 * 返回通用响应对象
 	 *
-	 * @param data    响应体
-	 * @param request 请求体
-	 * @param <T>     泛型参数
+	 * @param data
+	 *            响应体
+	 * @param request
+	 *            请求体
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	public static <T> Response<T> ok(T data, NativeWebRequest request) {
@@ -86,10 +96,14 @@ public final class Response<T> {
 	/**
 	 * 返回通用响应对象
 	 *
-	 * @param data    响应体
-	 * @param request 请求体
-	 * @param msg     响应消息
-	 * @param <T>     泛型参数
+	 * @param data
+	 *            响应体
+	 * @param request
+	 *            请求体
+	 * @param msg
+	 *            响应消息
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	public static <T> Response<T> ok(T data, NativeWebRequest request, String[] msg) {
@@ -111,10 +125,14 @@ public final class Response<T> {
 	/**
 	 * 返回通用响应对象
 	 * 
-	 * @param data 响应体
-	 * @param path 请求路径
-	 * @param msg  响应消息
-	 * @param <T>  泛型参数
+	 * @param data
+	 *            响应体
+	 * @param path
+	 *            请求路径
+	 * @param msg
+	 *            响应消息
+	 * @param <T>
+	 *            泛型参数
 	 * @return 响应体
 	 */
 	@SuppressWarnings("unchecked")

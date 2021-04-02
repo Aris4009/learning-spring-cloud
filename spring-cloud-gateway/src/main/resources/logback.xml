@@ -14,6 +14,6 @@
         <appender-ref ref="Console"/>
     </root>
     <logger name="ch.qos.logback" level="OFF" additivity="false"/>
-    <logger name="org.springframework" level="WARN"/>
-    <logger name="org.apache" level="ERROR"/>
+    <!--    <logger name="org.springframework" level="WARN"/>-->
+    <!--    <logger name="org.apache" level="ERROR"/>-->
 </configuration>

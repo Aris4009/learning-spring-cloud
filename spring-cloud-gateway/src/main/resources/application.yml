@@ -19,12 +19,25 @@ spring:
         - id: service-a #自定义路由id
           uri: http://localhost:8001 #目标服务器地址
           predicates:
-            - Path=/service-a/api/{segment}
+            - Path=/service-a/api/**
             - Method=GET,POST
+          filters:
+            - StripPrefix=1 #去除前缀，也可使用RewritePath
         - id: service-a-websocket
           uri: ws://localhost:8001
           predicates:
             - Path=/service-a/websocket/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway
+
 server:
   port: 8000
   error:

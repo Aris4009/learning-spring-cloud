@@ -7,9 +7,19 @@ nacos:
 
 server:
   port: 8001
+
 spring:
   application:
     name: service-a
   main:
     banner-mode: off
-    log-startup-info: false
+    log-startup-info: true
+  ## redis配置
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+  ## session配置
+  session:
+    store-type: redis
+    timeout: 30m

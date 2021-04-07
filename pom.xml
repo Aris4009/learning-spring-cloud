@@ -29,6 +29,7 @@
         <spring.cloud.version>2020.0.2</spring.cloud.version>
         <nacos.version>0.2.7</nacos.version>
         <spring.session.version>2020.0.3</spring.session.version>
+        <lettunce.version>6.1.0.RELEASE</lettunce.version>
     </properties>
 
     <dependencyManagement>
@@ -89,6 +90,12 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${lettunce.version}</version>
             </dependency>
 
             <dependency>

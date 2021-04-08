@@ -37,6 +37,11 @@ spring:
   redis:
     host: 127.0.0.1
     port: 6379
+    database: 0
+  ## session配置
+  session:
+    store-type: redis
+    timeout: 30m
 
 management:
   endpoints:

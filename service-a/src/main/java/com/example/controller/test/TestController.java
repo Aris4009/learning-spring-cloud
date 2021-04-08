@@ -38,7 +38,6 @@ public class TestController {
 	@PostMapping("/put")
 	public Response<Object> put(@RequestBody Map<String, Object> params) throws BusinessException {
 		String key = httpSession.getId();
-		log.info("sessionId:{}", key);
 		if (ObjectUtil.isEmpty(params)) {
 			throw BusinessException.paramsMustBeNotEmptyOrNullError();
 		}

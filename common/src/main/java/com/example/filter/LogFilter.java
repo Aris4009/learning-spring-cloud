@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 
 import com.example.request.wrapper.RequestWrapper;
-import com.example.request.wrapper.UnWrapHttpServletRequestWrapper;
 
 @Component
 @WebFilter(urlPatterns = "/api/*")
@@ -19,8 +18,7 @@ public class LogFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-		HttpServletRequest unwrapHttpServletRequest = UnWrapHttpServletRequestWrapper.unwrap(httpServletRequest);
-		RequestWrapper requestWrapper = new RequestWrapper(unwrapHttpServletRequest);
+		RequestWrapper requestWrapper = new RequestWrapper(httpServletRequest);
 		chain.doFilter(requestWrapper, response);
 	}
 }

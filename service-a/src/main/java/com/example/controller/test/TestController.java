@@ -7,8 +7,6 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.exception.BusinessException;
@@ -27,13 +25,9 @@ public class TestController {
 
 	private HttpSession httpSession;
 
-	private RedisOperations redisOperations;
-
-	public TestController(HttpServletRequest httpServletRequest, HttpSession httpSession,
-			@Qualifier("redisTemplate") RedisOperations redisOperations) {
+	public TestController(HttpServletRequest httpServletRequest, HttpSession httpSession) {
 		this.httpServletRequest = httpServletRequest;
 		this.httpSession = httpSession;
-		this.redisOperations = redisOperations;
 	}
 
 	@PostMapping("/hello")
@@ -57,16 +51,5 @@ public class TestController {
 		String key = httpSession.getId();
 		log.info("sessionId:{}", key);
 		return Response.ok(JSON.toJSONString(httpSession.getAttribute(key)), httpServletRequest);
-	}
-
-	@GetMapping("/redis/set")
-	public Response<Void> redisSet() {
-		redisOperations.opsForValue().set(httpSession.getId(), httpSession.getId());
-		return Response.ok(httpServletRequest);
-	}
-
-	@GetMapping("/redis/get")
-	public Response<Object> redisGet() {
-		return Response.ok(redisOperations.opsForValue().get(httpSession.getId()), httpServletRequest);
 	}
 }

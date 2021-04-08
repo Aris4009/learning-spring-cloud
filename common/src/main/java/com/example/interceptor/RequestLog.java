@@ -18,7 +18,6 @@ import com.example.exception.BusinessException;
 import com.example.json.JSON;
 import com.example.request.wrapper.RequestWrapper;
 import com.example.request.wrapper.RequestWrapperFacade;
-import com.example.request.wrapper.UnWrapHttpServletRequestWrapper;
 
 import lombok.Data;
 
@@ -68,8 +67,6 @@ public class RequestLog implements Serializable {
 
 	private String errorMsg;
 
-	private transient HttpServletRequest httpServletRequest;
-
 	private transient Object handler;
 
 	private static final int CAPACITY = 1024;
@@ -80,7 +77,6 @@ public class RequestLog implements Serializable {
 	public RequestLog(String serviceId, String requestId, String url, HttpMethod httpMethod,
 			HttpServletRequest httpServletRequest, Object handler) throws BusinessException {
 		this.serviceId = serviceId;
-		this.httpServletRequest = UnWrapHttpServletRequestWrapper.unwrap(httpServletRequest);
 		this.requestId = requestId;
 		this.url = url;
 		this.method = httpMethod.name();
@@ -102,10 +98,13 @@ public class RequestLog implements Serializable {
 	/**
 	 * 获取GET/POST方法请求参数
 	 *
-	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method             HttpMethod
+	 * @param httpServletRequest
+	 *            原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method
+	 *            HttpMethod
 	 * @return 返回请求体
-	 * @throws BusinessException 异常
+	 * @throws BusinessException
+	 *             异常
 	 */
 	public static String getParams(HttpServletRequest httpServletRequest, HttpMethod method) throws BusinessException {
 		try {
@@ -126,10 +125,13 @@ public class RequestLog implements Serializable {
 	/**
 	 * 获取POST multipart/form-data中上传的文件信息
 	 *
-	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method             HttpMethod
+	 * @param httpServletRequest
+	 *            原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method
+	 *            HttpMethod
 	 * @return 返回文件信息（文件名-文件大小的key-value对）
-	 * @throws BusinessException 异常
+	 * @throws BusinessException
+	 *             异常
 	 */
 	public static String getMultipartFilesInfo(HttpServletRequest httpServletRequest, HttpMethod method)
 			throws BusinessException {
@@ -155,7 +157,8 @@ public class RequestLog implements Serializable {
 	/**
 	 * 设置异常
 	 * 
-	 * @param exception 异常信息
+	 * @param exception
+	 *            异常信息
 	 */
 	public void setException(Exception exception) {
 		if (exception == null) {
@@ -191,6 +194,7 @@ public class RequestLog implements Serializable {
 		this.type = 2;
 	}
 
+	@Override
 	public String toString() {
 		return JSON.toJSONString(this);
 	}

@@ -14,5 +14,6 @@
         <appender-ref ref="Console"/>
     </root>
     <logger name="ch.qos.logback" level="OFF" additivity="false"/>
+    <logger name="org.redisson" level="WARN"/>
     <logger name="reactor.netty.http.server.AccessLog" level="INFO"/>
 </configuration>

@@ -1,57 +1,51 @@
-## nacos 配置
-#nacos:
-#  config:
-#    server-addr: test.nacos.com
-#  discovery:
-#    server-addr: test.nacos.com
-
-## springboot配置
-spring:
-  application:
-    name: gateway
-  #  main:
-  #    banner-mode: off
-  #    log-startup-info: false
-  ## spring-cloud 配置
-  cloud:
-    gateway:
-      routes:
-        - id: service-a #自定义路由id
-          uri: http://localhost:8001 #目标服务器地址
-          predicates:
-            - Path=/service-a/api/**
-            - Method=GET,POST
-          filters:
-            - StripPrefix=1 #去除前缀，也可使用RewritePath
-            - SaveSession
-        - id: service-a-websocket
-          uri: ws://localhost:8001
-          predicates:
-            - Path=/service-a/websocket/**
-          filters:
-            - StripPrefix=1
-            - SaveSession
-      globalcors: #全局跨域配置
-        add-to-simple-url-handler-mapping: true
-  ## redis配置
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    database: 0
-  ## session配置
-  session:
-    store-type: redis
-    timeout: 30m
-
 management:
   endpoints:
     web:
       exposure:
         include: gateway
-
+nacos:
+  config:
+    server-addr: test.nacos.com
+  discovery:
+    server-addr: test.nacos.com
 server:
-  port: 8000
   error:
     whitelabel:
       enabled: false
-
+  port: 8000
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      enabled: true
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+      httpclient:
+        compression: true
+        connect-timeout: 5
+      routes:
+        - filters:
+            - StripPrefix=1
+            - SaveSession
+          id: service-a
+          predicates:
+            - Path=/service-a/api/**
+            - Method=GET,POST
+          uri: http://localhost:8001
+        - filters:
+            - StripPrefix=1
+            - SaveSession
+          id: service-a-websocket
+          predicates:
+            - Path=/service-a/websocket/**
+          uri: ws://localhost:8001
+  main:
+    banner-mode: 'off'
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+  session:
+    store-type: redis
+    timeout: 30m

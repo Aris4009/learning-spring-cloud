@@ -1,25 +1,25 @@
-## nacos 配置
 nacos:
   config:
     server-addr: test.nacos.com
   discovery:
     server-addr: test.nacos.com
-
 server:
   port: 8001
-
 spring:
   application:
     name: service-a
   main:
-    banner-mode: off
+    banner-mode: 'off'
     log-startup-info: true
-  ## redis配置
   redis:
+    enable: true
+    type: 0
+    schema: redis
+    database: 0
     host: 127.0.0.1
     port: 6379
-    database: 0
-  ## session配置
+    cluster:
+      nodes: 10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
   session:
     store-type: redis
     timeout: 30m

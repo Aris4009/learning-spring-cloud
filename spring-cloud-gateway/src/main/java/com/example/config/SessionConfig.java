@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.session.data.redis.config.annotation.web.server.EnableRedisWebSession;
+import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
+import org.springframework.session.web.http.HttpSessionIdResolver;
 
 @EnableRedisWebSession
 public class SessionConfig {
@@ -20,5 +22,10 @@ public class SessionConfig {
 	public LettuceConnectionFactory lettuceConnectionFactory(
 			@Autowired RedisStandaloneConfiguration redisStandaloneConfiguration) {
 		return new LettuceConnectionFactory(redisStandaloneConfiguration);
+	}
+
+	@Bean
+	public HttpSessionIdResolver httpSessionIdResolver() {
+		return HeaderHttpSessionIdResolver.xAuthToken();
 	}
 }

@@ -61,17 +61,22 @@ spring:
     store-type: redis
     timeout: 30m
 
-#resilience4j:
-#  circuitbreaker:
-#    configs:
-#      default:
-#        registerHealthIndicator: true
-#        slidingWindowSize: 5
-#        minimumNumberOfCalls: 3
-#        permittedNumberOfCallsInHalfOpenState: 2
-#        automaticTransitionFromOpenToHalfOpenEnabled: true
-#        waitDurationInOpenState: 10s
-#        failureRateThreshold: 50
-#        recordExceptions:
+#https://blog.csdn.net/weixin_38405253/article/details/108891772
+#https://github.com/lmhmhl/Resilience4j-Guides-Chinese/blob/main/core-modules/CircuitBreaker.md
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        slidingWindowType: TIME_BASED
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
 
 

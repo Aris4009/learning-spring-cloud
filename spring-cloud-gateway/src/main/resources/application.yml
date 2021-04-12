@@ -23,35 +23,55 @@ spring:
         add-to-simple-url-handler-mapping: true
       httpclient:
         compression: true
-        connect-timeout: 5
       routes:
-        - filters:
-            - StripPrefix=1
-            - SaveSession
-          id: service-a
+        - id: service-a
+          uri: http://localhost:8001
           predicates:
             - Path=/service-a/api/**
             - Method=GET,POST
-          uri: http://localhost:8001
-        - filters:
+          filters:
             - StripPrefix=1
             - SaveSession
-          id: service-a-websocket
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          metadata:
+            connect-timeout: 1000
+            response-timeout: 5s
+
+        - id: service-a-websocket
+          uri: ws://localhost:8001
           predicates:
             - Path=/service-a/websocket/**
-          uri: ws://localhost:8001
+          filters:
+            - StripPrefix=1
+            - SaveSession
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
   main:
     banner-mode: 'off'
   redis:
+    enable: true
+    type: 0
+    schema: redis
+    host: 127.0.0.1
+    port: 6379
+    database: 0
     cluster:
       nodes: >-
         10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
-    database: 0
-    enable: true
-    host: 127.0.0.1
-    port: 6379
-    schema: redis
-    type: 0
   session:
     store-type: redis
     timeout: 30m
+
+#resilience4j:
+#  circuitbreaker:
+#    configs:
+#      default:
+#        registerHealthIndicator: true
+#        slidingWindowSize: 5
+#        minimumNumberOfCalls: 3
+#        permittedNumberOfCallsInHalfOpenState: 2
+#        automaticTransitionFromOpenToHalfOpenEnabled: true
+#        waitDurationInOpenState: 10s
+#        failureRateThreshold: 50
+#        recordExceptions:
+
+

@@ -51,4 +51,11 @@ public class TestController {
 		log.info("sessionId:{}", key);
 		return Response.ok(JSON.toJSONString(httpSession.getAttribute(key)), httpServletRequest);
 	}
+
+	@GetMapping("/slow")
+	public Response<String> slowCall() throws InterruptedException {
+		String slow = "slow";
+		Thread.sleep(7000);
+		return Response.ok(JSON.toJSONString(slow));
+	}
 }

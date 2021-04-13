@@ -33,9 +33,10 @@ spring:
             - StripPrefix=1
             - SaveSession
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-          metadata:
-            connect-timeout: 1000
-            response-timeout: 5s
+            - name: CircuitBreaker
+              args:
+                name: service-a-circuit-breaker
+                fallbackUri: forward:/api/circuit/breaker/fallback
 
         - id: service-a-websocket
           uri: ws://localhost:8001
@@ -64,19 +65,69 @@ spring:
 #https://blog.csdn.net/weixin_38405253/article/details/108891772
 #https://github.com/lmhmhl/Resilience4j-Guides-Chinese/blob/main/core-modules/CircuitBreaker.md
 resilience4j:
+  #断路器配置
   circuitbreaker:
     configs:
       default:
         registerHealthIndicator: true
-        slidingWindowSize: 5
-        minimumNumberOfCalls: 3
-        slidingWindowType: TIME_BASED
-        permittedNumberOfCallsInHalfOpenState: 1
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 10s
+        #调用失败率阈值，超过此值将会开启断路器
         failureRateThreshold: 50
+        #慢调用率阈值，超过此值将会开启断路器
+        slowCallRateThreshold: 100
+        #调用时间阈值，超过此值视为慢调用
+        slowCallDurationThreshold: 5000
+        #断路器在半开状态下允许通过的调用次数
+        permittedNumberOfCallsInHalfOpenState: 1
+        #断路器在半开状态下的最长等待时间，超过此值，会从半开状态恢复为开启状态，0表示一直处于半开状态
+        maxWaitDurationInHalfOpenState: 10000
+        #滑动窗口类型
+        slidingWindowType: TIME_BASED
+        #滑动窗口大小
+        slidingWindowSize: 5
+        #窗口周期
+        minimumNumberOfCalls: 2
+        #断路器从开启到半开等待的时间
+        waitDurationInOpenState: 10000
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        #记录异常
         recordExceptions:
           - org.springframework.web.client.HttpServerErrorException
           - java.io.IOException
+    instances:
+      service-a-circuit-breaker:
+        baseConfig: default
+
+    #重试机制
+    retry:
+      configs:
+        default:
+          registerHealthIndicator: true
+          maxRetryAttempts: 3
+          waitDuration: 5000
+          retryExceptions:
+            - org.springframework.web.client.HttpServerErrorException
+            - java.io.IOException
+      instances:
+        service-a-retry:
+          baseConfig: default
+  #限流器
+  ratelimiter:
+    configs:
+      default:
+        registerHealthIndicator: true
+        #在一次刷新周期内，允许执行的最大请求数
+        limitForPeriod: 1
+        #限流器每个多长时间刷新一次
+        limitRefreshPeriod: 5000
+        #线程等待的默认等待时间
+        timeoutDuration: 10
+    instances:
+      service-a-rate-limiter:
+        baseConfig: default
+
+
+
+
+
 
 

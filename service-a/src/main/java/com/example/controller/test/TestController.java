@@ -1,5 +1,6 @@
 package com.example.controller.test;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,5 +58,10 @@ public class TestController {
 		String slow = "slow";
 		Thread.sleep(7000);
 		return Response.ok(JSON.toJSONString(slow));
+	}
+
+	@GetMapping("/retry")
+	public Response<Void> retry() throws IOException{
+		throw new IOException("error");
 	}
 }

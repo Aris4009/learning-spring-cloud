@@ -37,6 +37,16 @@ spring:
               args:
                 name: service-a-circuit-breaker
                 fallbackUri: forward:/api/circuit/breaker/fallback
+            - name: Retry
+              args:
+                retries: 2
+                statuses: BAD_GATEWAY
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 3000ms
+                  maxBackoff: 5000ms
+                  factor: 2
+                  basedOnPreviousValue: false
 
         - id: service-a-websocket
           uri: ws://localhost:8001
@@ -97,33 +107,33 @@ resilience4j:
       service-a-circuit-breaker:
         baseConfig: default
 
-    #重试机制
-    retry:
-      configs:
-        default:
-          registerHealthIndicator: true
-          maxRetryAttempts: 3
-          waitDuration: 5000
-          retryExceptions:
-            - org.springframework.web.client.HttpServerErrorException
-            - java.io.IOException
-      instances:
-        service-a-retry:
-          baseConfig: default
-  #限流器
-  ratelimiter:
-    configs:
-      default:
-        registerHealthIndicator: true
-        #在一次刷新周期内，允许执行的最大请求数
-        limitForPeriod: 1
-        #限流器每个多长时间刷新一次
-        limitRefreshPeriod: 5000
-        #线程等待的默认等待时间
-        timeoutDuration: 10
-    instances:
-      service-a-rate-limiter:
-        baseConfig: default
+    #重试机制,spring-cloud-gateway不支持该重试机制，可使用spring-cloud-gateway重试机制
+#    retry:
+#      configs:
+#        default:
+#          registerHealthIndicator: true
+#          maxRetryAttempts: 3
+#          waitDuration: 5000
+#          retryExceptions:
+#            - org.springframework.web.client.HttpServerErrorException
+#            - java.io.IOException
+#      instances:
+#        service-a-retry:
+#          baseConfig: default
+  #限流器，spring-cloud-gateway不支持，使用spring-cloud-gateway限流器
+#  ratelimiter:
+#    configs:
+#      default:
+#        registerHealthIndicator: true
+#        #在一次刷新周期内，允许执行的最大请求数
+#        limitForPeriod: 1
+#        #限流器每个多长时间刷新一次
+#        limitRefreshPeriod: 5000
+#        #线程等待的默认等待时间
+#        timeoutDuration: 10
+#    instances:
+#      service-a-rate-limiter:
+#        baseConfig: default
 
 
 

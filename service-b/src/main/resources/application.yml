@@ -1,0 +1,26 @@
+nacos:
+  config:
+    server-addr: test.nacos.com
+  discovery:
+    server-addr: test.nacos.com
+server:
+  port: 8002
+spring:
+  application:
+    name: service-b
+  main:
+    banner-mode: 'off'
+    log-startup-info: true
+  redis:
+    cluster:
+      nodes: >-
+        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
+    database: 0
+    enable: true
+    host: 127.0.0.1
+    port: 6379
+    schema: redis
+    type: 0
+  session:
+    store-type: redis
+    timeout: 30m

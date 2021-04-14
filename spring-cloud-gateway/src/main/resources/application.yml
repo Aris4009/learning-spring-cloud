@@ -2,7 +2,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: gateway,metrics
+        include: metrics,gateway
 nacos:
   config:
     server-addr: test.nacos.com
@@ -37,6 +37,39 @@ spring:
               args:
                 name: service-a-circuit-breaker
                 fallbackUri: forward:/api/circuit/breaker/fallback
+
+        - id: service-a-websocket
+          uri: ws://localhost:8001
+          predicates:
+            - Path=/service-a/websocket/**
+          filters:
+            - StripPrefix=1
+            - SaveSession
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+        - id: service-b-slow
+          uri: http://localhost:8002
+          predicates:
+            - Path=/service-b/api/v1/test/slow
+            - Method=GET,POST
+          filters:
+            - StripPrefix=1
+            - SaveSession
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+            - name: CircuitBreaker
+              args:
+                name: service-b-circuit-breaker
+                fallbackUri: forward:/api/circuit/breaker/fallback
+
+        - id: service-b-retry
+          uri: http://localhost:8002
+          predicates:
+            - Path=/service-b/api/v1/test/retry
+            - Method=GET,POST
+          filters:
+            - StripPrefix=1
+            - SaveSession
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
             - name: Retry
               args:
                 retries: 2
@@ -47,15 +80,6 @@ spring:
                   maxBackoff: 5000ms
                   factor: 2
                   basedOnPreviousValue: false
-
-        - id: service-a-websocket
-          uri: ws://localhost:8001
-          predicates:
-            - Path=/service-a/websocket/**
-          filters:
-            - StripPrefix=1
-            - SaveSession
-            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
   main:
     banner-mode: 'off'
   redis:
@@ -106,20 +130,22 @@ resilience4j:
     instances:
       service-a-circuit-breaker:
         baseConfig: default
+      service-b-circuit-breaker:
+        baseConfig: default
 
     #重试机制,spring-cloud-gateway不支持该重试机制，可使用spring-cloud-gateway重试机制
-#    retry:
-#      configs:
-#        default:
-#          registerHealthIndicator: true
-#          maxRetryAttempts: 3
-#          waitDuration: 5000
-#          retryExceptions:
-#            - org.springframework.web.client.HttpServerErrorException
-#            - java.io.IOException
-#      instances:
-#        service-a-retry:
-#          baseConfig: default
+  #    retry:
+  #      configs:
+  #        default:
+  #          registerHealthIndicator: true
+  #          maxRetryAttempts: 3
+  #          waitDuration: 5000
+  #          retryExceptions:
+  #            - org.springframework.web.client.HttpServerErrorException
+  #            - java.io.IOException
+  #      instances:
+  #        service-a-retry:
+  #          baseConfig: default
   #限流器，spring-cloud-gateway不支持，使用spring-cloud-gateway限流器
 #  ratelimiter:
 #    configs:

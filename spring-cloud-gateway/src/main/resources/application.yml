@@ -27,6 +27,9 @@ spring:
   cloud:
     gateway:
       enabled: true
+      global:
+        filters:
+          strip.prefix: 1
       globalcors:
         add-to-simple-url-handler-mapping: true
       httpclient:
@@ -38,7 +41,7 @@ spring:
             - Path=/service-a/api/**
             - Method=GET,POST
           filters:
-            - StripPrefix=1
+            #            - StripPrefix=1
             - SaveSession
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
             - name: CircuitBreaker

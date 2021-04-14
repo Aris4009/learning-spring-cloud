@@ -27,7 +27,7 @@ spring:
     banner-mode: 'off'
     log-startup-info: true
   redis:
-    enable: false
+    enable: true
     type: 0
     schema: redis
     cluster:

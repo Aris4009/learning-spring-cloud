@@ -2,7 +2,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: metrics,gateway
+        include: '*'
+      cors:
+        allowed-origins: '*'
+        allowed-methods: '*'
+        allowed-headers: '*'
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
 nacos:
   config:
     server-addr: test.nacos.com

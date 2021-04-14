@@ -1,8 +1,23 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+      cors:
+        allowed-origins: '*'
+        allowed-methods: '*'
+        allowed-headers: '*'
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+
 nacos:
   config:
     server-addr: test.nacos.com
   discovery:
     server-addr: test.nacos.com
+
 server:
   port: 8001
 spring:
@@ -24,3 +39,7 @@ spring:
   session:
     store-type: redis
     timeout: 30m
+  rabbitmq:
+    enable: false
+    host: 127.0.0.1
+    port: 5672

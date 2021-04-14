@@ -14,6 +14,11 @@ public class GlobalFiltersConfig {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
+	/**
+	 * 剥离前缀过滤器
+	 * @param parts 剥离前缀数
+	 * @return 全局过滤器
+	 */
 	@Bean
 	@Order(Integer.MIN_VALUE + 1)
 	public GlobalFilter stripPrefixFilter(@Value("${spring.cloud.gateway.global.filters.strip.prefix}") int parts) {

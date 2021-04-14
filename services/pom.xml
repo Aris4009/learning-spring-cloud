@@ -16,4 +16,10 @@
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.ibeetl</groupId>
+            <artifactId>sql-spring</artifactId>
+        </dependency>
+    </dependencies>
 </project>

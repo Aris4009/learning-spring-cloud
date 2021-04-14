@@ -30,6 +30,8 @@ spring:
       global:
         filters:
           strip.prefix: 1
+          save.session: true
+          dedupe.response.header: Access-Control-Allow-Credentials Access-Control-Allow-Origin
       globalcors:
         add-to-simple-url-handler-mapping: true
       httpclient:
@@ -41,9 +43,6 @@ spring:
             - Path=/service-a/api/**
             - Method=GET,POST
           filters:
-            #            - StripPrefix=1
-            - SaveSession
-            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
             - name: CircuitBreaker
               args:
                 name: service-a-circuit-breaker
@@ -53,10 +52,6 @@ spring:
           uri: ws://localhost:8001
           predicates:
             - Path=/service-a/websocket/**
-          filters:
-            - StripPrefix=1
-            - SaveSession
-            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
         - id: service-b-slow
           uri: http://localhost:8002
@@ -64,9 +59,6 @@ spring:
             - Path=/service-b/api/v1/test/slow
             - Method=GET,POST
           filters:
-            - StripPrefix=1
-            - SaveSession
-            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
             - name: CircuitBreaker
               args:
                 name: service-b-circuit-breaker
@@ -78,9 +70,6 @@ spring:
             - Path=/service-b/api/v1/test/retry
             - Method=GET,POST
           filters:
-            - StripPrefix=1
-            - SaveSession
-            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
             - name: Retry
               args:
                 retries: 2

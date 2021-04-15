@@ -27,11 +27,18 @@ spring:
   cloud:
     gateway:
       enabled: true
-      global:
-        filters:
-          strip.prefix: 1
-          save.session: true
-          dedupe.response.header: Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      filter:
+        secure-headers:
+          enabled: true
+      default-filters:
+        - StripPrefix=1
+        - SaveSession
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      #      global:
+      #        filters:
+      #          strip.prefix: 1
+      #          save.session: true
+      #          dedupe.response.header: Access-Control-Allow-Credentials Access-Control-Allow-Origin
       globalcors:
         add-to-simple-url-handler-mapping: true
       httpclient:

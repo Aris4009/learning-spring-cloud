@@ -9,17 +9,18 @@ import org.springframework.cloud.gateway.filter.factory.DedupeResponseHeaderGate
 import org.springframework.cloud.gateway.filter.factory.SaveSessionGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
-@Configuration
+//@Configuration
 public class GlobalFiltersConfig {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
 	/**
 	 * 剥离前缀过滤器
-	 * @param parts 剥离前缀数
+	 * 
+	 * @param parts
+	 *            剥离前缀数
 	 * @return 全局过滤器
 	 */
 	@Bean
@@ -35,29 +36,30 @@ public class GlobalFiltersConfig {
 	}
 
 	/**
-	 * Session存储过滤器
-	 * 在转发到下游调用之前，保存Session
+	 * Session存储过滤器 在转发到下游调用之前，保存Session
+	 * 
 	 * @return Session存储过滤器
 	 */
 	@Bean
-	@Order(Integer.MIN_VALUE+2)
+	@Order(Integer.MIN_VALUE + 2)
 	@ConditionalOnProperty(name = "spring.cloud.gateway.global.filters.save.session", havingValue = "true")
-	public GlobalFilter saveSessionFilter(){
+	public GlobalFilter saveSessionFilter() {
 		return (exchange, chain) -> {
 			log.info("保存Session过滤器");
-			return new SaveSessionGatewayFilterFactory().apply(null).filter(exchange,chain);
+			return new SaveSessionGatewayFilterFactory().apply(null).filter(exchange, chain);
 		};
 	}
 
 	@Bean
-	@Order(Integer.MIN_VALUE+3)
-	public GlobalFilter dedupeResponseHeaderFilter(@Value("${spring.cloud.gateway.global.filters.dedupe.response.header}") String name){
+	@Order(Integer.MIN_VALUE + 3)
+	public GlobalFilter dedupeResponseHeaderFilter(
+			@Value("${spring.cloud.gateway.global.filters.dedupe.response.header}") String name) {
 		DedupeResponseHeaderGatewayFilterFactory.Config config = new DedupeResponseHeaderGatewayFilterFactory.Config();
 		config.setName(name);
 		return (exchange, chain) -> {
 			log.info("去除重复响应头过滤器");
 			DedupeResponseHeaderGatewayFilterFactory dedupeResponseHeaderGatewayFilterFactory = new DedupeResponseHeaderGatewayFilterFactory();
-			return dedupeResponseHeaderGatewayFilterFactory.apply(config).filter(exchange,chain);
+			return dedupeResponseHeaderGatewayFilterFactory.apply(config).filter(exchange, chain);
 		};
 	}
 }

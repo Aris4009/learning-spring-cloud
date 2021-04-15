@@ -27,13 +27,11 @@ spring:
   cloud:
     gateway:
       enabled: true
-      filter:
-        secure-headers:
-          enabled: true
       default-filters:
         - StripPrefix=1
         - SaveSession
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - SecureHeaders
       #      global:
       #        filters:
       #          strip.prefix: 1

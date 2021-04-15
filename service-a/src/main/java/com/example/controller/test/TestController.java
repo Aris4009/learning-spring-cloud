@@ -1,6 +1,7 @@
 package com.example.controller.test;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import com.example.exception.BusinessException;
 import com.example.json.JSON;
@@ -61,7 +63,16 @@ public class TestController {
 	}
 
 	@GetMapping("/retry")
-	public Response<Void> retry() throws IOException{
+	public Response<Void> retry() throws IOException {
 		throw new IOException("error");
+	}
+
+	@GetMapping("/xForward")
+	public Response<Map<String, Object>> xForward(WebRequest webRequest) {
+		Map<String, Object> map = new HashMap<>();
+		webRequest.getHeaderNames().forEachRemaining(name -> {
+			map.put(name, webRequest.getHeader(name));
+		});
+		return Response.ok(map, httpServletRequest);
 	}
 }

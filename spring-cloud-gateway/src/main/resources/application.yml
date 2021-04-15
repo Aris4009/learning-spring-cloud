@@ -37,6 +37,8 @@ spring:
       #          strip.prefix: 1
       #          save.session: true
       #          dedupe.response.header: Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      x-forwarded:
+        enabled: true
       globalcors:
         add-to-simple-url-handler-mapping: true
       httpclient:

@@ -40,4 +40,9 @@ public class TestController {
 	public Response<Void> retry() throws IOException {
 		throw new IOException("error");
 	}
+
+	@GetMapping("/rate/limiter")
+	public Response<Object> rateLimiter() {
+		return Response.ok(this.httpSession.getId(), this.httpServletRequest);
+	}
 }

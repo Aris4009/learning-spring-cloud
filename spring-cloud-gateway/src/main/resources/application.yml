@@ -32,11 +32,6 @@ spring:
         - SaveSession
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
         - SecureHeaders
-      #      global:
-      #        filters:
-      #          strip.prefix: 1
-      #          save.session: true
-      #          dedupe.response.header: Access-Control-Allow-Credentials Access-Control-Allow-Origin
       x-forwarded:
         enabled: true
       globalcors:
@@ -87,6 +82,18 @@ spring:
                   maxBackoff: 5000ms
                   factor: 2
                   basedOnPreviousValue: false
+
+        - id: service-b-rate-limiter
+          uri: http://localhost:8002
+          predicates:
+            - Path=/service-b/api/v1/test/rate/limiter
+            - Method=GET,POST
+          filters:
+            - name: RequestRateLimiter
+              arts:
+                redis-rate-limiter.replenishRate: 1
+                redis-rate-limiter.burstCapacity: 60
+                redis-rate-limiter.requestedTokens: 60
   main:
     banner-mode: 'off'
   redis:

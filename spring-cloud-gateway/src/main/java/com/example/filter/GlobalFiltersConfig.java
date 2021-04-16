@@ -11,7 +11,12 @@ import org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilter
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 
-//@Configuration
+/**
+ * global: # filters: # strip.prefix: 1 # save.session: true #
+ * dedupe.response.header: Access-Control-Allow-Credentials
+ * Access-Control-Allow-Origin
+ */
+// @Configuration
 public class GlobalFiltersConfig {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());

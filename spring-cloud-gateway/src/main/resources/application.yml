@@ -90,7 +90,8 @@ spring:
             - Method=GET,POST
           filters:
             - name: RequestRateLimiter
-              arts:
+              args:
+                key-resolver: "#{@sessionKeyResolver}"
                 redis-rate-limiter.replenishRate: 1
                 redis-rate-limiter.burstCapacity: 60
                 redis-rate-limiter.requestedTokens: 60
@@ -106,9 +107,6 @@ spring:
     cluster:
       nodes: >-
         10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
-  session:
-    store-type: redis
-    timeout: 30m
 
 #https://blog.csdn.net/weixin_38405253/article/details/108891772
 #https://github.com/lmhmhl/Resilience4j-Guides-Chinese/blob/main/core-modules/CircuitBreaker.md

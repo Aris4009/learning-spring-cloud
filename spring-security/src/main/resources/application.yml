@@ -1,0 +1,46 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+      cors:
+        allowed-origins: '*'
+        allowed-methods: '*'
+        allowed-headers: '*'
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+
+nacos:
+  config:
+    server-addr: test.nacos.com
+  discovery:
+    server-addr: test.nacos.com
+
+server:
+  port: 8003
+spring:
+  application:
+    name: spring-security
+  main:
+    banner-mode: 'off'
+    log-startup-info: true
+#  redis:
+#    enable: true
+#    type: 0
+#    schema: redis
+#    cluster:
+#      nodes: >-
+#        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
+#    database: 0
+#    host: 127.0.0.1
+#    port: 6379
+#  datasource:
+#    enable: false
+#    url: jdbc:mysql://localhost:3306/security?useSSL=false
+#    username: root
+#    password: null
+#    beetlsql:
+#      worker.id: 1
+#      data.center.id: 1

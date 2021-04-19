@@ -15,6 +15,7 @@
         <module>service-a</module>
         <module>service-b</module>
         <module>services</module>
+        <module>spring-security</module>
     </modules>
 
     <properties>
@@ -106,11 +107,6 @@
                 <artifactId>redisson-spring-boot-starter</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
-            <!--            <dependency>-->
-            <!--                <groupId>io.lettuce</groupId>-->
-            <!--                <artifactId>lettuce-core</artifactId>-->
-            <!--                <version>${lettuce.version}</version>-->
-            <!--            </dependency>-->
             <dependency>
                 <groupId>com.ibeetl</groupId>
                 <artifactId>sql-spring</artifactId>

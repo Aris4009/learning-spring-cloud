@@ -1,0 +1,24 @@
+server:
+  port: 8004
+spring:
+  application:
+    name: flowable
+  main:
+    banner-mode: 'off'
+    log-startup-info: true
+  datasource:
+    main:
+      enable: true
+      url: jdbc:mysql://localhost:3306/security?useSSL=false
+      username: root
+      password: null
+      beetlsql:
+        worker.id: 1
+        data.center.id: 1
+        base.package: com.example.dao
+        dao.suffix: Dao
+    flowable:
+      enable: true
+      url: jdbc:mysql://localhost:3306/flowable?useSSL=false&nullCatalogMeansCurrent=true
+      username: root
+      password: null

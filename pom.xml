@@ -16,6 +16,7 @@
         <module>service-b</module>
         <module>services</module>
         <module>spring-security</module>
+        <module>flowable</module>
     </modules>
 
     <properties>
@@ -34,6 +35,8 @@
         <lettuce.version>6.1.0.RELEASE</lettuce.version>
         <beetlsql.version>3.3.9-RELEASE</beetlsql.version>
         <spring.data.redis.reactive.version>2.4.5</spring.data.redis.reactive.version>
+        <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
+        <flowable.version>6.6.0</flowable.version>
     </properties>
 
     <dependencyManagement>
@@ -45,7 +48,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -53,43 +55,36 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
             <dependency>
                 <groupId>com.alibaba.boot</groupId>
                 <artifactId>nacos-config-spring-boot-starter</artifactId>
                 <version>${nacos.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.alibaba.boot</groupId>
                 <artifactId>nacos-discovery-spring-boot-starter</artifactId>
                 <version>${nacos.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikari.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
@@ -116,6 +111,16 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
                 <version>${spring.data.redis.reactive.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ibeetl</groupId>
+                <artifactId>beetl-framework-starter</artifactId>
+                <version>${beetlsql.version.2}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flowable</groupId>
+                <artifactId>flowable-spring-boot-starter-process</artifactId>
+                <version>${flowable.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

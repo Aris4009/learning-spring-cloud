@@ -20,7 +20,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionManager;
 
@@ -92,7 +91,6 @@ public class DataSourceConfig {
 	}
 
 	@Bean(name = "flowable", destroyMethod = "close")
-	@Primary
 	@ConditionalOnProperty(name = "spring.datasource.flowable.enable", havingValue = "true")
 	public HikariDataSource flowableDataSource(@Value("${spring.datasource.flowable.url}") final String url,
 			@Value("${spring.datasource.flowable.username}") final String username,
@@ -105,7 +103,6 @@ public class DataSourceConfig {
 	}
 
 	@Bean(name = "flowableTx")
-	@Primary
 	@ConditionalOnBean(name = "flowable", value = DataSource.class)
 	public DataSourceTransactionManager flowTx(@Qualifier(value = "flowable") DataSource dataSource) {
 		return new DataSourceTransactionManager(dataSource);

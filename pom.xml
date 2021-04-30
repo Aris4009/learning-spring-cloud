@@ -17,6 +17,7 @@
         <module>services</module>
         <module>spring-security</module>
         <module>flowable</module>
+        <module>reactor</module>
     </modules>
 
     <properties>
@@ -36,6 +37,7 @@
         <beetlsql.version>3.3.9-RELEASE</beetlsql.version>
         <spring.data.redis.reactive.version>2.4.5</spring.data.redis.reactive.version>
         <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
+        <reactor.version>2020.0.6</reactor.version>
     </properties>
 
     <dependencyManagement>
@@ -115,6 +117,13 @@
                 <groupId>com.ibeetl</groupId>
                 <artifactId>beetl-framework-starter</artifactId>
                 <version>${beetlsql.version.2}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bom</artifactId>
+                <version>${reactor.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

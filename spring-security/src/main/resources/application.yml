@@ -20,12 +20,21 @@ nacos:
 
 server:
   port: 8003
+  error:
+    path: /security/error
 spring:
   application:
     name: spring-security
   main:
     banner-mode: 'off'
     log-startup-info: true
+  security:
+    enable: true
+    cors:
+      allowed-origins: '*'
+      allowed-methods: get,post
+      path-pattern: /api/**
+
 #  redis:
 #    enable: true
 #    type: 0

@@ -1,21 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="APPLICATION_NAME" value="spring-security"/>
+    <property name="LOG_FILE_PATH" value="/Users/aris/logs/${APPLICATION_NAME}"/>
+    <property name="LOG_FILE_NAME" value="${APPLICATION_NAME}.log"/>
+    <property name="FILE_SEPARATOR" value="/"/>
     <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
     <appender name="Console"
               class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %highlight(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}) %red(%M\(%line\)):
-                %msg%n%throwable
-            </Pattern>
+            <pattern>
+                %highlight(%d{ISO8601}) %highlight(%-5level) [${APPLICATION_NAME}][%blue(%t)] %yellow(%C{1.}) %red(%M\(%line\)): %msg%n%throwable
+            </pattern>
         </layout>
+    </appender>
+    <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>
+                %highlight(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}) %red(%M\(%line\)): %msg%n%throwable
+            </pattern>
+            <charset>utf-8</charset>
+        </encoder>
+        <file>${LOG_FILE_PATH}${FILE_SEPARATOR}${LOG_FILE_NAME}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE_PATH}${FILE_SEPARATOR}${LOG_FILE_NAME}.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
     </appender>
     <!-- LOG everything at INFO level -->
     <root level="info">
         <appender-ref ref="Console"/>
+        <!--        <appender-ref ref="File"/>-->
     </root>
     <logger name="ch.qos.logback" level="OFF" additivity="false"/>
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.apache" level="ERROR"/>
-    <!--    <logger name="org.redisson" level="WARN"/>-->
+    <logger name="org.redisson" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
 </configuration>

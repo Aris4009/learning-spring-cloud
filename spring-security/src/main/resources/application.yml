@@ -34,22 +34,21 @@ spring:
       allowed-origins: '*'
       allowed-methods: get,post
       path-pattern: /api/**
-
-#  redis:
-#    enable: true
-#    type: 0
-#    schema: redis
-#    cluster:
-#      nodes: >-
-#        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
-#    database: 0
-#    host: 127.0.0.1
-#    port: 6379
-#  datasource:
-#    enable: false
-#    url: jdbc:mysql://localhost:3306/security?useSSL=false
-#    username: root
-#    password: null
-#    beetlsql:
-#      worker.id: 1
-#      data.center.id: 1
+  redis:
+    enable: true
+    type: 0
+    schema: redis
+    cluster:
+      nodes: >-
+        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+  datasource:
+    enable: true
+    url: jdbc:mysql://localhost:3306/security?useSSL=false
+    username: root
+    password: null
+    beetlsql:
+      worker.id: 1
+      data.center.id: 1

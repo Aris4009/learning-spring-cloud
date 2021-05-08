@@ -52,3 +52,7 @@ spring:
     beetlsql:
       worker.id: 1
       data.center.id: 1
+
+permission:
+  url:
+    file: permission-url.json

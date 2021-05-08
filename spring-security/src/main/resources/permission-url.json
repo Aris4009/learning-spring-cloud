@@ -1,0 +1,10 @@
+[
+  {
+    "name": "登录",
+    "url": "/api/login"
+  },
+  {
+    "name": "注销",
+    "url": "/api/logout"
+  }
+]

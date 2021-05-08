@@ -16,7 +16,6 @@
         <module>service-b</module>
         <module>services</module>
         <module>spring-security</module>
-        <module>flowable</module>
         <module>reactor</module>
     </modules>
 
@@ -38,6 +37,7 @@
         <spring.data.redis.reactive.version>2.4.5</spring.data.redis.reactive.version>
         <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
         <reactor.version>2020.0.6</reactor.version>
+        <jwt.version>0.11.2</jwt.version>
     </properties>
 
     <dependencyManagement>
@@ -124,6 +124,21 @@
                 <version>${reactor.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-gson</artifactId>
+                <version>${jwt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -4,6 +4,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import org.beetl.core.GroupTemplate;
 import org.beetl.core.ReThrowConsoleErrorHandler;
@@ -22,6 +23,8 @@ import org.beetl.sql.gen.simple.SimpleMavenProject;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.setting.dialect.Props;
 
 /**
@@ -31,11 +34,27 @@ public class CodeGen {
 
 	public static void main(String[] args) {
 		try {
+			List<String> tables = new ArrayList<>();
+			System.out.println("输入表名，回车分割");
+			Scanner scanner = new Scanner(System.in);
+			while (scanner.hasNextLine()) {
+				String table = scanner.nextLine();
+				if (!StrUtil.isEmptyIfStr(table)) {
+					tables.add(table);
+				} else {
+					break;
+				}
+			}
+			scanner.close();
+			if (CollUtil.isEmpty(tables)) {
+				return;
+			}
 			HikariConfig hikariConfig = hikariConfig();
 			SQLManager sqlManager = sqlManager(hikariConfig);
 			initGroupTemplate();
-			genCode(sqlManager);
+			genCode(sqlManager, tables);
 			sqlManager.getDs().getMetaData().close();
+			System.out.println(Arrays.toString(tables.toArray(new String[0])));
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 		}
@@ -62,7 +81,7 @@ public class CodeGen {
 		groupTemplate.setResourceLoader(resourceLoader);
 	}
 
-	public static void genCode(SQLManager sqlManager) {
+	public static void genCode(SQLManager sqlManager, List<String> tables) {
 		List<SourceBuilder> sourceBuilder = new ArrayList<>();
 		SourceBuilder entityBuilder = new EntitySourceBuilder();
 		SourceBuilder mapperBuilder = new CustomMapperSourceBuilder("dao");
@@ -78,8 +97,8 @@ public class CodeGen {
 
 		CustomProject project = new CustomProject("com.example");
 		project.setRoot(System.getProperty("user.dir") + "/services");
-		String tableName = "permission";
-		config.gen(tableName, project);
+
+		tables.forEach(table -> config.gen(table, project));
 	}
 
 	static class CustomProject extends SimpleMavenProject {

@@ -57,3 +57,8 @@ spring:
 permission:
   url:
     file: permission-url.json
+
+jwt:
+  key: test
+  iss: com.example
+  expire-second: 5

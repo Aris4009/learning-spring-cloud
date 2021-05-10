@@ -1,4 +1,5 @@
 package com.example.entity;
+import com.example.common.JSON;
 import org.beetl.sql.annotation.entity.AssignID;
 import org.beetl.sql.annotation.entity.Table;
 /*

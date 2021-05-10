@@ -1,0 +1,16 @@
+package ${package};
+<%for(impCls in imports){%>
+import ${impCls};
+<%}%>
+import org.beetl.sql.annotation.entity.AssignID;
+import org.beetl.sql.annotation.entity.Table;
+/*
+* ${comment}
+* gen by beetlsql3 ${date(),"yyyy-MM-dd"}
+*/
+
+@Table(name="${has(catalog)?(catalog+".")}${table}")
+public class ${className} implements java.io.Serializable {
+	<%include("pojoAttribute.btl"){}%>
+
+}

@@ -1,0 +1,44 @@
+<%
+	for(attr in attrs){
+	if(!isEmpty(attr.comment)){%>
+	/*
+	${attr.comment}
+	*/
+	<%}
+	if(attr.id&&attr.auto){
+	%>
+	@AutoId
+	<%
+	}else if(attr.id){
+	%>
+	@AssignID("snow")
+	<%}%>
+	private ${attr.javaType} ${attr.name} ;
+	<%println("\r");%>
+	<%}%>
+	<%for(attr in attrs){
+	if(!isEmpty(attr.comment)){%>
+	/**
+	* ${attr.comment}
+	*@return
+	*/
+	<%}%>
+	public ${attr.javaType} get${attr.methodName}(){
+		return  ${attr.name};
+	}
+	<%println("\r");%>
+	<%if(!isEmpty(attr.comment)){%>
+	/**
+	* ${attr.comment}
+	*@param  ${attr.name}
+	*/
+	<%}%>
+	public void set${attr.methodName}(${attr.javaType} ${attr.name} ){
+		this.${attr.name} = ${attr.name};
+	}
+	<%println("\r");%>
+	<%}%>
+	@Override
+    public String toString() {
+        return JSON.toJSONString(this);
+    }

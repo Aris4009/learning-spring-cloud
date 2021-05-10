@@ -17,6 +17,7 @@
         <module>services</module>
         <module>spring-security</module>
         <module>reactor</module>
+        <module>code-gen</module>
     </modules>
 
     <properties>
@@ -26,14 +27,14 @@
         <mysql.version>8.0.22</mysql.version>
         <hikari.version>4.0.1</hikari.version>
         <lombok.version>1.18.18</lombok.version>
-        <hutool.version>5.6.2</hutool.version>
+        <hutool.version>5.6.5</hutool.version>
         <spring.boot.version>2.4.4</spring.boot.version>
         <spring.cloud.version>2020.0.2</spring.cloud.version>
         <nacos.version>0.2.7</nacos.version>
         <spring.session.version>2020.0.3</spring.session.version>
         <redisson.version>3.15.4</redisson.version>
         <lettuce.version>6.1.0.RELEASE</lettuce.version>
-        <beetlsql.version>3.3.9-RELEASE</beetlsql.version>
+        <beetlsql.version>3.3.13-RELEASE</beetlsql.version>
         <spring.data.redis.reactive.version>2.4.5</spring.data.redis.reactive.version>
         <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
         <reactor.version>2020.0.6</reactor.version>

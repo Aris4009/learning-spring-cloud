@@ -1,4 +1,4 @@
-single
+sample
 ===
 
 * 注释
@@ -8,7 +8,7 @@ single
 cols
 ===
 
-	id,username
+	id,username,password
 
 updateSample
 ===
@@ -28,5 +28,8 @@ condition
 	-- @if(!isEmpty(password)){
 	 and password=#{password}
 	-- @}
-	
-	
+
+selectByUsername
+===
+
+    select #{use("cols")} from user where username=#{username}

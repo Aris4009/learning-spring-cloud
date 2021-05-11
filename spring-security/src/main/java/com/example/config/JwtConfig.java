@@ -20,10 +20,13 @@ public class JwtConfig {
 	}
 
 	@Bean
-	public JwtProp jwtProp(@Value("${jwt.iss}") String iss, @Value("${jwt.expire}") long expire) {
+	public JwtProp jwtProp(@Value("${jwt.iss}") String iss, @Value("${jwt.expire-second}") long expire,
+			@Value("${jwt.after-expire-second}") long afterExpire, @Value("${jwt.session-key}") String sessionKey) {
 		JwtProp jwtProp = new JwtProp();
 		jwtProp.setIss(iss);
 		jwtProp.setExpire(expire * 1000L);
+		jwtProp.setAfterExpire(afterExpire);
+		jwtProp.setSessionKey(sessionKey);
 		return jwtProp;
 	}
 }

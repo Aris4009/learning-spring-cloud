@@ -8,12 +8,11 @@ public class UserDetail {
 
 	private final Role role;
 
-	private final String token;
+	private String token;
 
-	public UserDetail(User user, Role role, String token) {
+	public UserDetail(User user, Role role) {
 		this.user = user;
 		this.role = role;
-		this.token = token;
 	}
 
 	public User getUser() {
@@ -26,6 +25,10 @@ public class UserDetail {
 
 	public String getToken() {
 		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 
 	@Override

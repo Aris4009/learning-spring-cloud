@@ -9,5 +9,5 @@ import com.example.entity.User;
 */
 public interface UserDao extends BaseMapper<User> {
 
-	User single(User user);
+	User selectByUsername(User user);
 }

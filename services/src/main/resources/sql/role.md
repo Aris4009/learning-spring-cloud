@@ -29,4 +29,4 @@ condition
 selectRoleByUserId
 ===
 
-	select t1.id,t2.name from role t1,user_role t2 where t1.id = t2.role_id and t2.user_id=#{userId}
+	select t1.id,t1.name from role t1,user_role t2 where t1.id = t2.role_id and t2.user_id=#{userId}

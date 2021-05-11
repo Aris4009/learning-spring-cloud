@@ -1,13 +1,14 @@
 package com.example.services;
 
-import org.springframework.security.core.userdetails.UserDetails;
-
 import com.example.entity.User;
+import com.example.entity.UserDetail;
 import com.example.exception.BusinessException;
 
 public interface ILoginService {
 
-	public UserDetails login(User user) throws BusinessException;
+	public UserDetail login(User user) throws BusinessException;
 
-	public void logout() throws BusinessException;
+	public void logout(User user) throws BusinessException;
+
+	public String refreshToken(String token) throws BusinessException;
 }

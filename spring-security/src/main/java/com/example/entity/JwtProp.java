@@ -6,6 +6,10 @@ public class JwtProp {
 
 	private long expire;
 
+	private long afterExpire;
+
+	private String sessionKey;
+
 	public String getIss() {
 		return iss;
 	}
@@ -20,5 +24,21 @@ public class JwtProp {
 
 	public void setExpire(long expire) {
 		this.expire = expire;
+	}
+
+	public long getAfterExpire() {
+		return afterExpire;
+	}
+
+	public void setAfterExpire(long afterExpire) {
+		this.afterExpire = afterExpire;
+	}
+
+	public String getSessionKey() {
+		return sessionKey;
+	}
+
+	public void setSessionKey(String sessionKey) {
+		this.sessionKey = sessionKey;
 	}
 }

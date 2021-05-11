@@ -6,5 +6,9 @@
   {
     "name": "注销",
     "url": "/api/logout"
+  },
+  {
+    "name": "刷新token",
+    "url": "/api/refresh/token"
   }
 ]

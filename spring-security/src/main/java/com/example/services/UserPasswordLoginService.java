@@ -1,5 +1,7 @@
 package com.example.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,8 @@ public class UserPasswordLoginService implements ILoginService {
 	private final RoleDao roleDao;
 
 	private final JwtUtils jwtUtils;
+
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
 	public UserPasswordLoginService(UserDao userDao, RoleDao roleDao, JwtUtils jwtUtils) {
 		this.userDao = userDao;
@@ -84,6 +88,7 @@ public class UserPasswordLoginService implements ILoginService {
 			String id = String.valueOf(userDetail.getUser().getId());
 			return this.jwtUtils.refresh(id, token, userDetail);
 		} catch (Exception e) {
+			log.error(e.getMessage(), e);
 			throw new BusinessException("invalid token");
 		}
 	}

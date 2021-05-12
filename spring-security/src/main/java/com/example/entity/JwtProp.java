@@ -8,6 +8,8 @@ public class JwtProp {
 
 	private long afterExpire;
 
+	private boolean sessionVerify;
+
 	private String sessionKey;
 
 	public String getIss() {
@@ -32,6 +34,14 @@ public class JwtProp {
 
 	public void setAfterExpire(long afterExpire) {
 		this.afterExpire = afterExpire;
+	}
+
+	public boolean isSessionVerify() {
+		return sessionVerify;
+	}
+
+	public void setSessionVerify(boolean sessionVerify) {
+		this.sessionVerify = sessionVerify;
 	}
 
 	public String getSessionKey() {

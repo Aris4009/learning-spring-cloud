@@ -15,30 +15,23 @@ import com.example.services.ILoginService;
 
 @RestController
 @RequestMapping("/api")
-public class LoginController {
+public class LoginController extends BaseController {
 
 	private final ILoginService loginService;
 
-	private final HttpServletRequest request;
-
 	public LoginController(ILoginService loginService, HttpServletRequest request) {
+		super(request);
 		this.loginService = loginService;
-		this.request = request;
 	}
 
 	@PostMapping("/login")
 	public Response<UserDetail> login(@RequestBody User user) throws BusinessException {
-		return Response.ok(this.loginService.login(user), this.request);
+		return Response.ok(this.loginService.login(user), getRequest());
 	}
 
 	@PostMapping("/logout")
 	public Response<Void> logout() throws BusinessException {
-		this.loginService.logout();
-		return Response.ok(this.request);
-	}
-
-	@PostMapping("/refresh/token")
-	public Response<String> refreshToken(@RequestBody UserDetail param) throws BusinessException {
-		return Response.ok(this.loginService.refreshToken(param.getToken()), this.request);
+		this.loginService.logout(token());
+		return Response.ok(getRequest());
 	}
 }

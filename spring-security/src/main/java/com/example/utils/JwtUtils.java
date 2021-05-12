@@ -8,9 +8,10 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Component;
 
-import com.example.common.JSON;
 import com.example.entity.JwtProp;
+import com.example.entity.UserDetail;
 import com.example.exception.BusinessException;
+import com.example.json.JSON;
 import com.google.gson.reflect.TypeToken;
 
 import cn.hutool.core.util.StrUtil;
@@ -48,17 +49,19 @@ public class JwtUtils {
 		long expire = System.currentTimeMillis() + this.jwtProp.getExpire();
 		String token = Jwts.builder().setIssuer(this.jwtProp.getIss()).setExpiration(new Date(expire))
 				.claim(CLAIM_KEY, payload).signWith(key).compact();
-		if (this.httpSession != null) {
+		if (this.jwtProp.isSessionVerify()) {
 			String sessionKey = this.jwtProp.getSessionKey() + SESSION_KEY_SPLIT + this.sessionId();
 			this.httpSession.setAttribute(sessionKey, token);
 		}
 		return token;
 	}
 
-	public <T> String refresh(String token, T payload) throws BusinessException {
+	public <T> String refresh(String token) throws BusinessException {
 		int code = verify(token);
 		if (code == SUCCESS) {
-			return sign(payload);
+			UserDetail userDetail = parse(token, new TypeToken<UserDetail>() {
+			});
+			return sign(userDetail);
 		} else {
 			throw BusinessException.paramsError("token");
 		}
@@ -67,14 +70,14 @@ public class JwtUtils {
 	public int verify(String token) {
 		int code = SUCCESS;
 		try {
-			parseClaimsJws(token);
-			if (this.httpSession != null) {
+			if (this.jwtProp.isSessionVerify()) {
 				String sessionKey = this.jwtProp.getSessionKey() + SESSION_KEY_SPLIT + this.sessionId();
 				String session = String.valueOf(this.httpSession.getAttribute(sessionKey));
 				if (!StrUtil.equals(token, session)) {
 					throw new SignatureException("redis session " + sessionKey + " invalid");
 				}
 			}
+			parseClaimsJws(token);
 		} catch (ExpiredJwtException signatureException) {
 			code = EXPIRE;
 		} catch (Exception e) {
@@ -83,15 +86,21 @@ public class JwtUtils {
 		return code;
 	}
 
-	public <T> T parse(String token, TypeToken<T> typeToken) {
+	public <T> T parse(String token, TypeToken<T> typeToken) throws BusinessException {
+		int code = verify(token);
+		if (code < 0) {
+			throw new BusinessException("invalid token");
+		}
 		String json = parseClaimsJws(token).getBody().get(CLAIM_KEY).toString();
 		return JSON.parse(json, typeToken);
 	}
 
-	public void removeSession() {
-		if (this.httpSession != null) {
-			String sessionKey = this.jwtProp.getSessionKey() + SESSION_KEY_SPLIT + this.sessionId();
-			this.httpSession.removeAttribute(sessionKey);
+	public void removeSession(String token) throws BusinessException {
+		int code = verify(token);
+		if (code < 0) {
+			throw new BusinessException("invalid token");
+		}
+		if (this.jwtProp.isSessionVerify()) {
 			this.httpSession.invalidate();
 		}
 	}

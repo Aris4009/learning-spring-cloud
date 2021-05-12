@@ -8,7 +8,6 @@ public interface ILoginService {
 
 	public UserDetail login(User user) throws BusinessException;
 
-	public void logout() throws BusinessException;
+	public void logout(String token) throws BusinessException;
 
-	public String refreshToken(String token) throws BusinessException;
 }

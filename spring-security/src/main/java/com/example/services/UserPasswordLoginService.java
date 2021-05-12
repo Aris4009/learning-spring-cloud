@@ -1,7 +1,5 @@
 package com.example.services;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +10,6 @@ import com.example.entity.User;
 import com.example.entity.UserDetail;
 import com.example.exception.BusinessException;
 import com.example.utils.JwtUtils;
-import com.google.gson.reflect.TypeToken;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -24,8 +21,6 @@ public class UserPasswordLoginService implements ILoginService {
 	private final RoleDao roleDao;
 
 	private final JwtUtils jwtUtils;
-
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
 	public UserPasswordLoginService(UserDao userDao, RoleDao roleDao, JwtUtils jwtUtils) {
 		this.userDao = userDao;
@@ -73,22 +68,7 @@ public class UserPasswordLoginService implements ILoginService {
 	}
 
 	@Override
-	public void logout() throws BusinessException {
-		this.jwtUtils.removeSession();
-	}
-
-	@Override
-	public String refreshToken(String token) throws BusinessException {
-		if (StrUtil.isBlankIfStr(token)) {
-			throw new BusinessException("invalid token");
-		}
-		try {
-			UserDetail userDetail = this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
-			});
-			return this.jwtUtils.refresh(token, userDetail);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-			throw new BusinessException("invalid token");
-		}
+	public void logout(String token) throws BusinessException {
+		this.jwtUtils.removeSession(token);
 	}
 }

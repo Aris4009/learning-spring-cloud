@@ -10,5 +10,9 @@
   {
     "name": "刷新token",
     "url": "/api/refresh/token"
+  },
+  {
+    "name": "校验token",
+    "url": "/api/verify/token"
   }
 ]

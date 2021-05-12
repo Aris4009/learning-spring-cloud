@@ -41,16 +41,16 @@ spring:
       nodes: >-
         10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
     database: 0
-    host: 127.0.0.1
+    host: 10.0.4.113
     port: 6379
   session:
     store-type: redis
     timeout: 30m
   datasource:
     enable: true
-    url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
-    username: root
-    password:
+    url: jdbc:mysql://10.0.4.113:3306/security?useSSL=false
+    username: admin
+    password: Admin_1234
     beetlsql:
       worker.id: 1
       data.center.id: 1

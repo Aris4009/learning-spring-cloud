@@ -28,13 +28,12 @@ public class LoginController {
 
 	@PostMapping("/login")
 	public Response<UserDetail> login(@RequestBody User user) throws BusinessException {
-		UserDetail userDetail = loginService.login(user);
-		return Response.ok(userDetail, this.request);
+		return Response.ok(this.loginService.login(user), this.request);
 	}
 
 	@PostMapping("/logout")
-	public Response<Void> logout(@RequestBody User user) throws BusinessException {
-		this.loginService.logout(user);
+	public Response<Void> logout() throws BusinessException {
+		this.loginService.logout();
 		return Response.ok(this.request);
 	}
 

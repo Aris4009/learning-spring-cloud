@@ -67,14 +67,14 @@ public class UserPasswordLoginService implements ILoginService {
 
 		user.setPassword(null);
 		UserDetail userDetail = new UserDetail(user, role);
-		String token = this.jwtUtils.sign(String.valueOf(user.getId()), userDetail);
+		String token = this.jwtUtils.sign(userDetail);
 		userDetail.setToken(token);
 		return userDetail;
 	}
 
 	@Override
-	public void logout(User user) throws BusinessException {
-		this.jwtUtils.removeSession(String.valueOf(user.getId()));
+	public void logout() throws BusinessException {
+		this.jwtUtils.removeSession();
 	}
 
 	@Override
@@ -85,8 +85,7 @@ public class UserPasswordLoginService implements ILoginService {
 		try {
 			UserDetail userDetail = this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
 			});
-			String id = String.valueOf(userDetail.getUser().getId());
-			return this.jwtUtils.refresh(id, token, userDetail);
+			return this.jwtUtils.refresh(token, userDetail);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			throw new BusinessException("invalid token");

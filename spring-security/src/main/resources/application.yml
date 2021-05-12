@@ -29,7 +29,6 @@ spring:
     banner-mode: 'off'
     log-startup-info: true
   security:
-    enable: true
     cors:
       allowed-origins: '*'
       allowed-methods: get,post
@@ -55,11 +54,6 @@ spring:
     beetlsql:
       worker.id: 1
       data.center.id: 1
-      product: true
-
-permission:
-  url:
-    file: permission-url.json
 
 jwt:
   key: test

@@ -83,7 +83,7 @@ public class UserPasswordLoginService implements ILoginService {
 			throw new BusinessException("invalid token");
 		}
 		try {
-			UserDetail userDetail = (UserDetail) this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
+			UserDetail userDetail = this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
 			});
 			String id = String.valueOf(userDetail.getUser().getId());
 			return this.jwtUtils.refresh(id, token, userDetail);

@@ -28,10 +28,11 @@ spring:
     gateway:
       security:
         enable: true
-        verify-url: http://localhost:8003/api/verify/token
-        refresh-url: http://localhost:8003/api/refresh/token
-        login-url: http://localhost:8003/api/login
-        logout-url: http://localhost:8003/api/logout
+        authenticate-url: http://localhost:8003/api/v1/authenticate
+        verify-url: http://localhost:8003/api/v1/verify/token
+        refresh-url: http://localhost:8003/api/v1/refresh/token
+        login-url: http://localhost:8003/api/v1/login
+        logout-url: http://localhost:8003/api/v1/logout
         white-url-list-path: white-url-list.json
       enabled: true
       default-filters:

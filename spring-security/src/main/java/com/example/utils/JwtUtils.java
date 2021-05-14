@@ -41,6 +41,8 @@ public class JwtUtils {
 
 	public static final String INVALID_TOKEN = "invalid token";
 
+	public static final String UNANUTHORIZED = "unauthorized";
+
 	public JwtUtils(Key key, JwtProp jwtProp, HttpSession httpSession) {
 		this.key = key;
 		this.jwtProp = jwtProp;
@@ -58,7 +60,7 @@ public class JwtUtils {
 		return token;
 	}
 
-	public <T> String refresh(String token) throws BusinessException {
+	public String refresh(String token) throws BusinessException {
 		int code = verify(token);
 		if (code == SUCCESS) {
 			UserDetail userDetail = parse(token, new TypeToken<UserDetail>() {

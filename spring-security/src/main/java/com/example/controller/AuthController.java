@@ -13,7 +13,7 @@ import com.example.services.IAuthService;
 import cn.hutool.core.map.MapUtil;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class AuthController extends BaseController {
 
 	private final IAuthService authService;

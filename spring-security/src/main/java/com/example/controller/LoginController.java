@@ -11,7 +11,7 @@ import com.example.response.entity.Response;
 import com.example.services.ILoginService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class LoginController extends BaseController {
 
 	private final ILoginService loginService;

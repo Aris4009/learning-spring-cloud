@@ -47,7 +47,7 @@ spring:
     enable: false
     url: jdbc:mysql://localhost:3306/security?useSSL=false
     username: root
-    password: null
+    password:
     beetlsql:
       worker.id: 1
       data.center.id: 1

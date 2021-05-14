@@ -1,7 +1,10 @@
 package com.example.filter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +16,18 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONUtil;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
@@ -47,6 +56,8 @@ public class AuthenticationFilterConfig {
 	/**
 	 * 认证地址
 	 * 
+	 * @param authenticateUrl
+	 *            鉴权地址
 	 * @param verifyUrl
 	 *            校验令牌地址
 	 * @param refreshUrl
@@ -58,30 +69,41 @@ public class AuthenticationFilterConfig {
 	 * @return 认证地址
 	 */
 	@Bean
-	public AuthenticationUrl authenticationUrl(@Value("${spring.cloud.gateway.security.verify-url}") String verifyUrl,
+	public AuthenticationUrl authenticationUrl(
+			@Value("${spring.cloud.gateway.security.authenticate-url}") String authenticateUrl,
+			@Value("${spring.cloud.gateway.security.verify-url}") String verifyUrl,
 			@Value("${spring.cloud.gateway.security.refresh-url}") String refreshUrl,
 			@Value("${spring.cloud.gateway.security.login-url}") String loginUrl,
 			@Value("${spring.cloud.gateway.security.logout-url}") String logoutUrl) {
-		return new AuthenticationUrl(verifyUrl, refreshUrl, loginUrl, logoutUrl);
+		return new AuthenticationUrl(authenticateUrl, verifyUrl, refreshUrl, loginUrl, logoutUrl);
 	}
 
 	/**
 	 * 全局认证过滤器
 	 * 
-	 * @param httpClient
+	 * @param webClient
+	 *            http客户端
 	 * @param whiteUrlList
+	 *            白名单
 	 * @param authenticationUrl
+	 *            认证url
 	 * @param stripPrefix
-	 * @return
+	 *            剥离前缀
+	 * @return 全局认证过滤器
 	 */
 	@Bean
-	public GlobalFilter authenticationFilter(@Autowired HttpClient httpClient, @Autowired List<WhiteUrl> whiteUrlList,
+	public GlobalFilter authenticationFilter(@Autowired WebClient webClient, @Autowired List<WhiteUrl> whiteUrlList,
 			@Autowired AuthenticationUrl authenticationUrl,
 			@Value("${spring.cloud.gateway.default-filters[0]:StripPrefix=1}") String stripPrefix) {
 		int part = Integer.parseInt(stripPrefix.split("=")[1]);
 		AuthenticationFilter.Config config = new AuthenticationFilter.Config();
 		config.setParts(part);
-		return new AuthenticationFilter(httpClient, config, whiteUrlList, authenticationUrl);
+		return new AuthenticationFilter(webClient, config, whiteUrlList, authenticationUrl);
+	}
+
+	@Bean
+	public WebClient webClient(@Autowired HttpClient httpClient) {
+		return WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
 	}
 
 	static class WhiteUrl {
@@ -109,6 +131,8 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationUrl {
 
+		private final String authenticateUrl;
+
 		private final String verifyUrl;
 
 		private final String refreshUrl;
@@ -117,11 +141,17 @@ public class AuthenticationFilterConfig {
 
 		private final String logoutUrl;
 
-		public AuthenticationUrl(String verifyUrl, String refreshUrl, String loginUrl, String logoutUrl) {
+		public AuthenticationUrl(String authenticateUrl, String verifyUrl, String refreshUrl, String loginUrl,
+				String logoutUrl) {
+			this.authenticateUrl = authenticateUrl;
 			this.verifyUrl = verifyUrl;
 			this.refreshUrl = refreshUrl;
 			this.loginUrl = loginUrl;
 			this.logoutUrl = logoutUrl;
+		}
+
+		public String getAuthenticateUrl() {
+			return authenticateUrl;
 		}
 
 		public String getVerifyUrl() {
@@ -143,7 +173,7 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
-		private final HttpClient httpClient;
+		private final WebClient webClient;
 
 		private final Config config;
 
@@ -159,11 +189,13 @@ public class AuthenticationFilterConfig {
 
 		private static final String AUTHORIZATION_HEADER = "Authorization";
 
+		private static final String INVALID_TOKEN = "invalid token";
+
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(HttpClient httpClient, Config config, List<WhiteUrl> whiteUrlList,
+		public AuthenticationFilter(WebClient webClient, Config config, List<WhiteUrl> whiteUrlList,
 				AuthenticationUrl authenticationUrl) {
-			this.httpClient = httpClient;
+			this.webClient = webClient;
 			this.config = config;
 			if (whiteUrlList == null) {
 				this.whiteUrlList = new ArrayList<>();
@@ -176,18 +208,33 @@ public class AuthenticationFilterConfig {
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 			ServerHttpRequest request = exchange.getRequest();
+			// 非http或https请求，不执行鉴权
 			if (checkScheme(exchange) || checkWhiteUrl(exchange)) {
+				log.debug("url {} skip authenticate", request.getURI().getRawPath());
 				return chain.filter(exchange);
 			}
 
+			// 不包含鉴权请求头，直接返回407，表示无效的token
 			if (checkHeaders(exchange)) {
-
+				log.debug("url {} invalid token or session", request.getURI().getRawPath());
+				return invalidToken(exchange);
 			}
 
-			return chain.filter(exchange);
-
+			int code = authentication(exchange);
+			if (code == 0) {
+				return chain.filter(exchange);
+			} else {
+				return invalidToken(exchange);
+			}
 		}
 
+		/**
+		 * 检查非http/https请求
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return true:非http/https false:http/https请求
+		 */
 		private boolean checkScheme(ServerWebExchange exchange) {
 			boolean flag = false;
 			ServerHttpRequest request = exchange.getRequest();
@@ -198,6 +245,13 @@ public class AuthenticationFilterConfig {
 			return flag;
 		}
 
+		/**
+		 * 检查原始请求是否在白名单中
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return true:在白名单 false:不在白名单
+		 */
 		private boolean checkWhiteUrl(ServerWebExchange exchange) {
 			boolean flag = false;
 			ServerHttpRequest request = exchange.getRequest();
@@ -211,14 +265,109 @@ public class AuthenticationFilterConfig {
 			return flag;
 		}
 
+		/**
+		 * 检查请求头中是否包含X-Auth-Token、Authorization
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return true:两个请求头至少缺少一个 false:两个请求头都包含
+		 */
 		private boolean checkHeaders(ServerWebExchange exchange) {
 			boolean flag = false;
 			ServerHttpRequest request = exchange.getRequest();
-			if (StrUtil.isBlankIfStr(request.getHeaders().getFirst(HEADER_X_AUTH_TOKEN))
-					|| StrUtil.isBlankIfStr(request.getHeaders().getFirst(AUTHORIZATION_HEADER))) {
+			if (StrUtil.isBlankIfStr(xAuthTokenHeader(exchange))
+					|| StrUtil.isBlankIfStr(authorizationHeader(exchange))) {
 				flag = true;
 			}
 			return flag;
+		}
+
+		/**
+		 * 无效token响应，http响应码:407
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 无效token响应
+		 */
+		private Mono<Void> invalidToken(ServerWebExchange exchange) {
+			ServerHttpResponse response = exchange.getResponse();
+			response.setStatusCode(HttpStatus.PROXY_AUTHENTICATION_REQUIRED);
+			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+			Response<Void> r = Response.fail(HttpStatus.PROXY_AUTHENTICATION_REQUIRED.value(), INVALID_TOKEN);
+			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
+		}
+
+		/**
+		 * 获取sessionId
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 获取sessionId
+		 */
+		private String xAuthTokenHeader(ServerWebExchange exchange) {
+			ServerHttpRequest request = exchange.getRequest();
+			return request.getHeaders().getFirst(HEADER_X_AUTH_TOKEN);
+		}
+
+		/**
+		 * 获取token
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 获取token
+		 */
+		private String authorizationHeader(ServerWebExchange exchange) {
+			ServerHttpRequest request = exchange.getRequest();
+			return request.getHeaders().getFirst(AUTHORIZATION_HEADER);
+		}
+
+		/**
+		 * 鉴权
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 鉴权结果
+		 */
+		private Mono<Integer> authenticationWebFlux(ServerWebExchange exchange) {
+			Mono<Integer> code;
+			try {
+				String xAuthTokenHeader = xAuthTokenHeader(exchange);
+				String authorizationHeader = authorizationHeader(exchange);
+				Map<String, String> authParam = new HashMap<>();
+				authParam.put("url", exchange.getRequest().getURI().getRawPath());
+				code = this.webClient.post().uri(this.authenticationUrl.getAuthenticateUrl())
+						.header(HEADER_X_AUTH_TOKEN, xAuthTokenHeader).header(AUTHORIZATION_HEADER, authorizationHeader)
+						.contentType(MediaType.APPLICATION_JSON).body(authParam, Map.class).exchangeToMono(response -> {
+							int status = response.statusCode().value();
+							return Mono.just(status);
+						});
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+				code = Mono.just(-2);
+			}
+			return code;
+		}
+
+		/**
+		 * 鉴权
+		 *
+		 * @return 鉴权结果
+		 */
+		private int authentication(ServerWebExchange exchange) {
+			int code = 0;
+			try {
+				String xAuthTokenHeader = xAuthTokenHeader(exchange);
+				String authorizationHeader = authorizationHeader(exchange);
+				Map<String, String> authParam = new HashMap<>();
+				authParam.put("url", exchange.getRequest().getURI().getRawPath());
+				code = HttpRequest.post(this.authenticationUrl.getAuthenticateUrl())
+						.header(HEADER_X_AUTH_TOKEN, xAuthTokenHeader).header(AUTHORIZATION_HEADER, authorizationHeader)
+						.body(JSONUtil.toJsonStr(authParam)).execute().getStatus();
+			} catch (Exception e) {
+				log.debug(e.getMessage(), e);
+				code = -1;
+			}
+			return code;
 		}
 
 		@Override
@@ -238,6 +387,83 @@ public class AuthenticationFilterConfig {
 				this.parts = parts;
 			}
 
+		}
+
+		public static class Response<T> {
+
+			private T data;
+
+			private String path;
+
+			private String message;
+
+			private int status;
+
+			private String timestamp;
+
+			public T getData() {
+				return data;
+			}
+
+			public void setData(T data) {
+				this.data = data;
+			}
+
+			public String getPath() {
+				return path;
+			}
+
+			public void setPath(String path) {
+				this.path = path;
+			}
+
+			public String getMessage() {
+				return message;
+			}
+
+			public void setMessage(String message) {
+				this.message = message;
+			}
+
+			public int getStatus() {
+				return status;
+			}
+
+			public void setStatus(int status) {
+				this.status = status;
+			}
+
+			public String getTimestamp() {
+				return timestamp;
+			}
+
+			public void setTimestamp(String timestamp) {
+				this.timestamp = timestamp;
+			}
+
+			@SuppressWarnings({"unchecked", "rawtypes"})
+			public static <T> Response<T> fail(T data, int status, String... msg) {
+				String s;
+				if (!StrUtil.isEmptyIfStr(msg)) {
+					StringBuilder builder = new StringBuilder();
+					for (String m : msg) {
+						builder.append(m);
+					}
+					s = builder.toString();
+				} else {
+					s = "fail";
+				}
+				Response response = new Response();
+				response.setData(data);
+				response.setMessage(s);
+				response.setStatus(status);
+				response.setTimestamp(LocalDateTime.now().toString());
+				return (Response<T>) response;
+			}
+
+			public static Response<Void> fail(int status, String... msg) {
+				return fail(null, status, msg);
+			}
 		}
 	}
 }

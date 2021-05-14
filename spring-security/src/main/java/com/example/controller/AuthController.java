@@ -1,14 +1,16 @@
 package com.example.controller;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.exception.BusinessException;
 import com.example.response.entity.Response;
 import com.example.services.IAuthService;
+
+import cn.hutool.core.map.MapUtil;
 
 @RestController
 @RequestMapping("/api")
@@ -16,19 +18,28 @@ public class AuthController extends BaseController {
 
 	private final IAuthService authService;
 
+	private static final String URL = "url";
+
 	public AuthController(IAuthService authService, HttpServletRequest request) {
 		super(request);
 		this.authService = authService;
 	}
 
-	@PostMapping("/refresh/token")
-	public Response<String> refresh() throws BusinessException {
-		return Response.ok(this.authService.refresh(token()), getRequest());
+	@RequestMapping("/refresh/token")
+	public Response<String> refresh(@RequestHeader(AUTHORIZATION_HEADER) String token) throws BusinessException {
+		return Response.ok(this.authService.refresh(token), getRequest());
 	}
 
-	@PostMapping("/verify/token")
-	public Response<Void> verify() throws BusinessException {
-		this.authService.verify(token());
+	@RequestMapping("/verify/token")
+	public Response<Void> verify(@RequestHeader(AUTHORIZATION_HEADER) String token) throws BusinessException {
+		this.authService.verify(token);
+		return Response.ok(getRequest());
+	}
+
+	@PostMapping("/authenticate")
+	public Response<Void> verify(@RequestHeader(AUTHORIZATION_HEADER) String token,
+			@RequestBody Map<String, String> url) throws BusinessException {
+		this.authService.verify(token, MapUtil.getStr(url, URL));
 		return Response.ok(getRequest());
 	}
 }

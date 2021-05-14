@@ -39,6 +39,8 @@ public class JwtUtils {
 
 	private static final int INVALID = -2;
 
+	public static final String INVALID_TOKEN = "invalid token";
+
 	public JwtUtils(Key key, JwtProp jwtProp, HttpSession httpSession) {
 		this.key = key;
 		this.jwtProp = jwtProp;
@@ -63,7 +65,7 @@ public class JwtUtils {
 			});
 			return sign(userDetail);
 		} else {
-			throw BusinessException.paramsError("token");
+			throw new BusinessException(INVALID_TOKEN);
 		}
 	}
 
@@ -89,7 +91,7 @@ public class JwtUtils {
 	public <T> T parse(String token, TypeToken<T> typeToken) throws BusinessException {
 		int code = verify(token);
 		if (code < 0) {
-			throw new BusinessException("invalid token");
+			throw new BusinessException(INVALID_TOKEN);
 		}
 		String json = parseClaimsJws(token).getBody().get(CLAIM_KEY).toString();
 		return JSON.parse(json, typeToken);
@@ -98,7 +100,7 @@ public class JwtUtils {
 	public void removeSession(String token) throws BusinessException {
 		int code = verify(token);
 		if (code < 0) {
-			throw new BusinessException("invalid token");
+			throw new BusinessException(INVALID_TOKEN);
 		}
 		if (this.jwtProp.isSessionVerify()) {
 			this.httpSession.invalidate();

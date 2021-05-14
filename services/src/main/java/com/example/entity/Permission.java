@@ -6,13 +6,13 @@ import org.beetl.sql.annotation.entity.Table;
 import com.example.common.JSON;
 /*
 * 
-* gen by beetlsql3 2021-05-10
+* gen by beetlsql3 2021-05-14
 */
 
 @Table(name = "permission")
 public class Permission implements java.io.Serializable {
 
-	private static final long serialVersionUID = -8534090912200919686L;
+	private static final long serialVersionUID = -3169076214173181566L;
 
 	@AssignID("snow")
 	private Long id;
@@ -20,6 +20,10 @@ public class Permission implements java.io.Serializable {
 	private String name;
 
 	private String url;
+
+	private Long gid;
+
+	private Long roleId;
 
 	public Long getId() {
 		return id;
@@ -43,6 +47,22 @@ public class Permission implements java.io.Serializable {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public Long getGid() {
+		return gid;
+	}
+
+	public void setGid(Long gid) {
+		this.gid = gid;
+	}
+
+	public Long getRoleId() {
+		return roleId;
+	}
+
+	public void setRoleId(Long roleId) {
+		this.roleId = roleId;
 	}
 
 	@Override

@@ -2,10 +2,7 @@ package com.example.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.entity.User;
 import com.example.entity.UserDetail;
@@ -29,9 +26,9 @@ public class LoginController extends BaseController {
 		return Response.ok(this.loginService.login(user), getRequest());
 	}
 
-	@PostMapping("/logout")
-	public Response<Void> logout() throws BusinessException {
-		this.loginService.logout(token());
+	@RequestMapping("/logout")
+	public Response<Void> logout(@RequestHeader(AUTHORIZATION_HEADER) String token) throws BusinessException {
+		this.loginService.logout(token);
 		return Response.ok(getRequest());
 	}
 }

@@ -18,8 +18,10 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 
 import cn.hutool.core.io.resource.ClassPathResource;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 /**
  * 全局认证过滤器
@@ -28,6 +30,13 @@ import reactor.core.publisher.Mono;
 @ConditionalOnProperty(name = "spring.cloud.gateway.security.enable", havingValue = "true")
 public class AuthenticationFilterConfig {
 
+	/**
+	 * 白名单
+	 * 
+	 * @param path
+	 *            白名单配置地址
+	 * @return 白名单列表
+	 */
 	@Bean
 	public List<WhiteUrl> whiteUrlList(@Value("${spring.cloud.gateway.security.white-url-list-path}") String path) {
 		ClassPathResource classPathResource = new ClassPathResource(path);
@@ -35,6 +44,19 @@ public class AuthenticationFilterConfig {
 		return JSONUtil.toList(content, WhiteUrl.class);
 	}
 
+	/**
+	 * 认证地址
+	 * 
+	 * @param verifyUrl
+	 *            校验令牌地址
+	 * @param refreshUrl
+	 *            刷新令牌地址
+	 * @param loginUrl
+	 *            登录地址
+	 * @param logoutUrl
+	 *            注销地址
+	 * @return 认证地址
+	 */
 	@Bean
 	public AuthenticationUrl authenticationUrl(@Value("${spring.cloud.gateway.security.verify-url}") String verifyUrl,
 			@Value("${spring.cloud.gateway.security.refresh-url}") String refreshUrl,
@@ -43,14 +65,23 @@ public class AuthenticationFilterConfig {
 		return new AuthenticationUrl(verifyUrl, refreshUrl, loginUrl, logoutUrl);
 	}
 
+	/**
+	 * 全局认证过滤器
+	 * 
+	 * @param httpClient
+	 * @param whiteUrlList
+	 * @param authenticationUrl
+	 * @param stripPrefix
+	 * @return
+	 */
 	@Bean
-	public GlobalFilter authenticationFilter(@Autowired List<WhiteUrl> whiteUrlList,
+	public GlobalFilter authenticationFilter(@Autowired HttpClient httpClient, @Autowired List<WhiteUrl> whiteUrlList,
 			@Autowired AuthenticationUrl authenticationUrl,
 			@Value("${spring.cloud.gateway.default-filters[0]:StripPrefix=1}") String stripPrefix) {
 		int part = Integer.parseInt(stripPrefix.split("=")[1]);
 		AuthenticationFilter.Config config = new AuthenticationFilter.Config();
 		config.setParts(part);
-		return new AuthenticationFilter(config, whiteUrlList, authenticationUrl);
+		return new AuthenticationFilter(httpClient, config, whiteUrlList, authenticationUrl);
 	}
 
 	static class WhiteUrl {
@@ -112,6 +143,8 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
+		private final HttpClient httpClient;
+
 		private final Config config;
 
 		private final List<WhiteUrl> whiteUrlList;
@@ -128,7 +161,9 @@ public class AuthenticationFilterConfig {
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(Config config, List<WhiteUrl> whiteUrlList, AuthenticationUrl authenticationUrl) {
+		public AuthenticationFilter(HttpClient httpClient, Config config, List<WhiteUrl> whiteUrlList,
+				AuthenticationUrl authenticationUrl) {
+			this.httpClient = httpClient;
 			this.config = config;
 			if (whiteUrlList == null) {
 				this.whiteUrlList = new ArrayList<>();
@@ -141,26 +176,49 @@ public class AuthenticationFilterConfig {
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 			ServerHttpRequest request = exchange.getRequest();
-			String scheme = request.getURI().getScheme();
-			if (!"http".equals(scheme) && !"https".equals(scheme)) {
+			if (checkScheme(exchange) || checkWhiteUrl(exchange)) {
 				return chain.filter(exchange);
 			}
 
-			String path = request.getURI().getRawPath();
+			if (checkHeaders(exchange)) {
+
+			}
+
+			return chain.filter(exchange);
+
+		}
+
+		private boolean checkScheme(ServerWebExchange exchange) {
 			boolean flag = false;
+			ServerHttpRequest request = exchange.getRequest();
+			String scheme = request.getURI().getScheme();
+			if (!"http".equals(scheme) && !"https".equals(scheme)) {
+				flag = true;
+			}
+			return flag;
+		}
+
+		private boolean checkWhiteUrl(ServerWebExchange exchange) {
+			boolean flag = false;
+			ServerHttpRequest request = exchange.getRequest();
+			String path = request.getURI().getRawPath();
 			for (WhiteUrl whiteUrl : this.whiteUrlList) {
 				if (MATCHER.match(whiteUrl.getUrl(), path)) {
 					flag = true;
 					break;
 				}
 			}
-			if (flag) {
-				return chain.filter(exchange);
+			return flag;
+		}
+
+		private boolean checkHeaders(ServerWebExchange exchange) {
+			boolean flag = false;
+			ServerHttpRequest request = exchange.getRequest();
+			if (StrUtil.isBlankIfStr(request.getHeaders().getFirst(HEADER_X_AUTH_TOKEN))
+					|| StrUtil.isBlankIfStr(request.getHeaders().getFirst(AUTHORIZATION_HEADER))) {
+				flag = true;
 			}
-
-			// TODO
-			return chain.filter(exchange);
-
+			return flag;
 		}
 
 		@Override
@@ -181,11 +239,5 @@ public class AuthenticationFilterConfig {
 			}
 
 		}
-	}
-
-	public static void main(String[] args) {
-		String pathPattern = "/service/**";
-		String path = "/services/api/aa";
-		System.out.println(new AntPathMatcher().match(pathPattern, path));
 	}
 }

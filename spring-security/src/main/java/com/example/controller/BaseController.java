@@ -4,7 +4,9 @@ import javax.servlet.http.HttpServletRequest;
 
 public class BaseController {
 
-	private static final String AUTHORIZATION_HEADER = "Authorization";
+	public static final String AUTHORIZATION_HEADER = "Authorization";
+
+	public static final String HEADER_X_AUTH_TOKEN = "X-Auth-Token";
 
 	private final HttpServletRequest request;
 
@@ -14,9 +16,5 @@ public class BaseController {
 
 	public HttpServletRequest getRequest() {
 		return request;
-	}
-
-	public String token() {
-		return this.request.getHeader(AUTHORIZATION_HEADER);
 	}
 }

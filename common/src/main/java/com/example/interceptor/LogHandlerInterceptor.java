@@ -16,7 +16,7 @@ import com.example.exception.BusinessException;
 
 public class LogHandlerInterceptor implements HandlerInterceptor {
 
-	private final String serviceId;
+	private String serviceId;
 
 	private final RequestLogConfig requestLogConfig;
 
@@ -38,6 +38,10 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 
 	public static final String REQUEST_LOG_ATTRIBUTE = "requestLog";
 
+	public static final String REQUEST_ID_HEADER = "requestId";
+
+	public static final String SERVICE_ID_HEADER = "serviceId";
+
 	@Override
 	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler) throws Exception {
@@ -46,7 +50,15 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			throw new BusinessException("unsupported " + httpMethod + " method");
 		}
 
-		String requestId = UUID.randomUUID().toString().replace("-", "");
+		if (httpServletRequest.getHeader(SERVICE_ID_HEADER) != null) {
+			this.serviceId = httpServletRequest.getHeader(SERVICE_ID_HEADER).toString();
+		}
+		String requestId;
+		if (httpServletRequest.getHeader(REQUEST_ID_HEADER) != null) {
+			requestId = httpServletRequest.getHeader(REQUEST_ID_HEADER).toString();
+		} else {
+			requestId = UUID.randomUUID().toString().replace("-", "");
+		}
 		String url = httpServletRequest.getRequestURI();
 		String method = null;
 		if (httpMethod != null) {
@@ -60,6 +72,8 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 
 			httpServletRequest.setAttribute("request-id", requestId);
 			httpServletRequest.setAttribute("url", url);
+			httpServletRequest.setAttribute("requestId", requestId);
+			httpServletRequest.setAttribute("serviceId", this.serviceId);
 			if (url.equals("/error")) {
 				return true;
 			}

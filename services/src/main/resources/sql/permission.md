@@ -35,4 +35,4 @@ condition
 verifyPermissionByRoleId
 ===
 
-    select count(1) from permission t1, role_permission t2 where t1.id = t2.permission_id and t2.role_id=#{roleId} and t2.url = #{url} 	
+    select count(1) from permission t1, role_permission t2 where t1.id = t2.permission_id and t2.role_id=#{roleId} and t1.url = #{url} 	

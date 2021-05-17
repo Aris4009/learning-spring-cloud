@@ -10,11 +10,11 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>spring-cloud-gateway</module>
         <module>common</module>
+        <module>services</module>
+        <module>spring-cloud-gateway</module>
         <module>service-a</module>
         <module>service-b</module>
-        <module>services</module>
         <module>spring-security</module>
         <module>reactor</module>
         <module>code-gen</module>

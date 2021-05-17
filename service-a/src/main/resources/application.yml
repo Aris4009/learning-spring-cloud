@@ -45,7 +45,7 @@ spring:
     port: 5672
   datasource:
     enable: false
-    url: jdbc:mysql://localhost:3306/security?useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
     username: root
     password:
     beetlsql:

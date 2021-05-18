@@ -47,10 +47,10 @@ spring:
       httpclient:
         compression: true
       routes:
-        - id: auth
+        - id: spring-security
           uri: http://localhost:8003
           predicates:
-            - Path=/auth/api/**
+            - Path=/spring-security/api/**
             - Method=GET,POST
 
         - id: service-a

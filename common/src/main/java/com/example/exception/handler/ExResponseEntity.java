@@ -11,6 +11,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
+import com.example.constant.MyHttpHeader;
 import com.example.exception.BusinessException;
 import com.example.exception.ErrorPathException;
 
@@ -39,6 +40,8 @@ public class ExResponseEntity extends ResponseEntity<Map<String, Object>> {
 		}
 		ServletWebRequest servletWebRequest = (ServletWebRequest) request;
 		map.put("path", servletWebRequest.getRequest().getRequestURI());
+		map.put("serviceId", request.getHeader(MyHttpHeader.SERVICE_ID_HEADER));
+		map.put("requestId", request.getHeader(MyHttpHeader.REQUEST_ID_HEADER));
 		return map;
 	}
 }

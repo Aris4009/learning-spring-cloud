@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
+import com.example.constant.MyHttpHeader;
 import com.example.exception.BusinessException;
 
 public class LogHandlerInterceptor implements HandlerInterceptor {
@@ -38,10 +39,6 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 
 	public static final String REQUEST_LOG_ATTRIBUTE = "requestLog";
 
-	public static final String REQUEST_ID_HEADER = "requestId";
-
-	public static final String SERVICE_ID_HEADER = "serviceId";
-
 	@Override
 	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler) throws Exception {
@@ -50,14 +47,21 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			throw new BusinessException("unsupported " + httpMethod + " method");
 		}
 
-		if (httpServletRequest.getHeader(SERVICE_ID_HEADER) != null) {
-			this.serviceId = httpServletRequest.getHeader(SERVICE_ID_HEADER).toString();
+		if (httpServletRequest.getHeader(MyHttpHeader.SERVICE_ID_HEADER) != null) {
+			this.serviceId = httpServletRequest.getHeader(MyHttpHeader.SERVICE_ID_HEADER).toString();
 		}
 		String requestId;
-		if (httpServletRequest.getHeader(REQUEST_ID_HEADER) != null) {
-			requestId = httpServletRequest.getHeader(REQUEST_ID_HEADER).toString();
+		if (httpServletRequest.getHeader(MyHttpHeader.REQUEST_ID_HEADER) != null) {
+			requestId = httpServletRequest.getHeader(MyHttpHeader.REQUEST_ID_HEADER).toString();
 		} else {
 			requestId = UUID.randomUUID().toString().replace("-", "");
+		}
+
+		int traceNo;
+		if (httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER) != null) {
+			traceNo = Integer.parseInt(httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER)) + 1;
+		} else {
+			traceNo = 0;
 		}
 		String url = httpServletRequest.getRequestURI();
 		String method = null;
@@ -65,8 +69,8 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			method = httpMethod.name();
 		}
 		try {
-			RequestLog requestLog = new RequestLog(this.serviceId, requestId, url, httpMethod, httpServletRequest,
-					handler);
+			RequestLog requestLog = new RequestLog(this.serviceId, requestId, traceNo, url, httpMethod,
+					httpServletRequest, handler);
 			requestLog.beforeType();
 			requestLog.setTime();
 
@@ -87,7 +91,9 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		} catch (Exception e) {
 			// 封装预处理错误，由于此处发生异常，导致afterCompletion方法无法执行而采取的补救措施
 			RequestLog requestLog = new RequestLog();
+			requestLog.setServiceId(this.serviceId);
 			requestLog.setRequestId(requestId);
+			requestLog.setTraceNo(traceNo);
 			requestLog.setUrl(url);
 			requestLog.setMethod(method);
 			requestLog.setException(e);

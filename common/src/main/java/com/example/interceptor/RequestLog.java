@@ -32,6 +32,9 @@ public class RequestLog implements Serializable {
 	// 实例id
 	private String serviceId;
 
+	// 链路数值
+	private int traceNo;
+
 	// 时间
 	private long time;
 
@@ -74,10 +77,11 @@ public class RequestLog implements Serializable {
 	public RequestLog() {
 	}
 
-	public RequestLog(String serviceId, String requestId, String url, HttpMethod httpMethod,
+	public RequestLog(String serviceId, String requestId, int traceNo, String url, HttpMethod httpMethod,
 			HttpServletRequest httpServletRequest, Object handler) throws BusinessException {
 		this.serviceId = serviceId;
 		this.requestId = requestId;
+		this.traceNo = traceNo;
 		this.url = url;
 		this.method = httpMethod.name();
 		try {

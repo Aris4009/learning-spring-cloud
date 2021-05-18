@@ -18,6 +18,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import com.example.config.RequestLogConfig;
+import com.example.constant.MyHttpHeader;
 import com.example.exception.BusinessException;
 import com.example.exception.ErrorPathException;
 import com.example.interceptor.IStoreLog;
@@ -72,6 +73,15 @@ public class ExControllerAdvice {
 		}
 		requestLog.errorType();
 		requestLog.setTime();
+		requestLog.setServiceId(servletWebRequest.getHeader(MyHttpHeader.SERVICE_ID_HEADER));
+		requestLog.setRequestId(servletWebRequest.getHeader(MyHttpHeader.REQUEST_ID_HEADER));
+		int traceNo;
+		if (httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER) != null) {
+			traceNo = Integer.parseInt(httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER)) + 1;
+		} else {
+			traceNo = 0;
+		}
+		requestLog.setTraceNo(traceNo + 1);
 		StoreLogUtil.storeLog(storeLogList, requestLog);
 		return new ResponseEntity<>(map, HttpStatus.INTERNAL_SERVER_ERROR);
 	}

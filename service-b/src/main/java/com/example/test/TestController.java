@@ -20,9 +20,9 @@ public class TestController {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private HttpServletRequest httpServletRequest;
+	private final HttpServletRequest httpServletRequest;
 
-	private HttpSession httpSession;
+	private final HttpSession httpSession;
 
 	public TestController(HttpServletRequest httpServletRequest, HttpSession httpSession) {
 		this.httpServletRequest = httpServletRequest;
@@ -33,7 +33,7 @@ public class TestController {
 	public Response<String> slowCall() throws InterruptedException {
 		String slow = "slow";
 		Thread.sleep(7000);
-		return Response.ok(JSON.toJSONString(slow));
+		return Response.ok(JSON.toJSONString(slow), this.httpServletRequest);
 	}
 
 	@GetMapping("/retry")

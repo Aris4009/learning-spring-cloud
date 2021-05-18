@@ -18,11 +18,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 
 import cn.hutool.core.io.resource.ClassPathResource;
@@ -30,7 +28,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONUtil;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
 /**
  * 全局认证过滤器
@@ -42,7 +39,8 @@ public class AuthenticationFilterConfig {
 	/**
 	 * 白名单
 	 * 
-	 * @param path 白名单配置地址
+	 * @param path
+	 *            白名单配置地址
 	 * @return 白名单列表
 	 */
 	@Bean
@@ -55,11 +53,16 @@ public class AuthenticationFilterConfig {
 	/**
 	 * 认证地址
 	 * 
-	 * @param authenticateUrl 鉴权地址
-	 * @param verifyUrl       校验令牌地址
-	 * @param refreshUrl      刷新令牌地址
-	 * @param loginUrl        登录地址
-	 * @param logoutUrl       注销地址
+	 * @param authenticateUrl
+	 *            鉴权地址
+	 * @param verifyUrl
+	 *            校验令牌地址
+	 * @param refreshUrl
+	 *            刷新令牌地址
+	 * @param loginUrl
+	 *            登录地址
+	 * @param logoutUrl
+	 *            注销地址
 	 * @return 认证地址
 	 */
 	@Bean
@@ -75,24 +78,19 @@ public class AuthenticationFilterConfig {
 	/**
 	 * 全局认证过滤器
 	 * 
-	 * @param whiteUrlList      白名单
-	 * @param authenticationUrl 认证url
-	 * @param stripPrefix       剥离前缀
+	 * @param whiteUrlList
+	 *            白名单
+	 * @param authenticationUrl
+	 *            认证url
+	 * @param stripPrefix
+	 *            剥离前缀
 	 * @return 全局认证过滤器
 	 */
 	@Bean
 	public GlobalFilter authenticationFilter(@Autowired List<WhiteUrl> whiteUrlList,
 			@Autowired AuthenticationUrl authenticationUrl,
 			@Value("${spring.cloud.gateway.default-filters[0]:StripPrefix=1}") String stripPrefix) {
-		int part = Integer.parseInt(stripPrefix.split("=")[1]);
-		AuthenticationFilter.Config config = new AuthenticationFilter.Config();
-		config.setParts(part);
-		return new AuthenticationFilter(config, whiteUrlList, authenticationUrl);
-	}
-
-	@Bean
-	public WebClient webClient(@Autowired HttpClient httpClient) {
-		return WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+		return new AuthenticationFilter(whiteUrlList, authenticationUrl);
 	}
 
 	static class WhiteUrl {
@@ -162,8 +160,6 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
-		private final Config config;
-
 		private final List<WhiteUrl> whiteUrlList;
 
 		private final AuthenticationUrl authenticationUrl;
@@ -184,10 +180,11 @@ public class AuthenticationFilterConfig {
 
 		private static final String INVALID_TOKEN = "invalid token";
 
+		private static final int HTTP_TIME_OUT = 3000;
+
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(Config config, List<WhiteUrl> whiteUrlList, AuthenticationUrl authenticationUrl) {
-			this.config = config;
+		public AuthenticationFilter(List<WhiteUrl> whiteUrlList, AuthenticationUrl authenticationUrl) {
 			if (whiteUrlList == null) {
 				this.whiteUrlList = new ArrayList<>();
 			} else {
@@ -230,7 +227,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 设置serviceId
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 */
 		private void setServiceId(ServerWebExchange exchange) {
 			Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
@@ -250,7 +248,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 设置requestId
 		 *
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 */
 		private void setRequestId(ServerWebExchange exchange) {
 			ServerHttpRequest request = exchange.getRequest();
@@ -264,7 +263,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 检查非http/https请求
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return true:非http/https false:http/https请求
 		 */
 		private boolean checkScheme(ServerWebExchange exchange) {
@@ -280,7 +280,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 检查原始请求是否在白名单中
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return true:在白名单 false:不在白名单
 		 */
 		private boolean checkWhiteUrl(ServerWebExchange exchange) {
@@ -299,7 +300,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 检查请求头中是否包含X-Auth-Token、Authorization
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return true:两个请求头至少缺少一个 false:两个请求头都包含
 		 */
 		private boolean checkHeaders(ServerWebExchange exchange) {
@@ -315,7 +317,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 无效token响应，http响应码:407
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return 无效token响应
 		 */
 		private Mono<Void> invalidToken(ServerWebExchange exchange) {
@@ -329,7 +332,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 获取sessionId
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return 获取sessionId
 		 */
 		private String xAuthTokenHeader(ServerWebExchange exchange) {
@@ -340,7 +344,8 @@ public class AuthenticationFilterConfig {
 		/**
 		 * 获取token
 		 * 
-		 * @param exchange ServerWebExchange
+		 * @param exchange
+		 *            ServerWebExchange
 		 * @return 获取token
 		 */
 		private String authorizationHeader(ServerWebExchange exchange) {
@@ -366,7 +371,7 @@ public class AuthenticationFilterConfig {
 				code = HttpRequest.post(this.authenticationUrl.getAuthenticateUrl())
 						.header(HEADER_X_AUTH_TOKEN, xAuthTokenHeader).header(AUTHORIZATION_HEADER, authorizationHeader)
 						.header(SERVICE_ID_HEADER, serviceId).header(REQUEST_ID_HEADER, requestId)
-						.body(JSONUtil.toJsonStr(authParam)).execute().getStatus();
+						.timeout(HTTP_TIME_OUT).body(JSONUtil.toJsonStr(authParam)).execute().getStatus();
 			} catch (Exception e) {
 				log.debug(e.getMessage(), e);
 				code = HttpStatus.SERVICE_UNAVAILABLE.value();
@@ -377,20 +382,6 @@ public class AuthenticationFilterConfig {
 		@Override
 		public int getOrder() {
 			return ORDERED;
-		}
-
-		public static class Config {
-
-			private int parts;
-
-			public int getParts() {
-				return parts;
-			}
-
-			public void setParts(int parts) {
-				this.parts = parts;
-			}
-
 		}
 
 		public static class Response<T> {
@@ -445,7 +436,7 @@ public class AuthenticationFilterConfig {
 				this.timestamp = timestamp;
 			}
 
-			@SuppressWarnings({ "unchecked", "rawtypes" })
+			@SuppressWarnings({"unchecked", "rawtypes"})
 			public static <T> Response<T> fail(T data, int status, String... msg) {
 				String s;
 				if (!StrUtil.isEmptyIfStr(msg)) {

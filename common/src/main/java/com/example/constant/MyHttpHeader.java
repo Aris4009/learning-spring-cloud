@@ -14,7 +14,7 @@ public final class MyHttpHeader {
 
 	public static final String URL_HEADER = "url";
 
-	public static final String HEADER_X_AUTH_TOKEN = "X-Auth-Token";
+	public static final String X_AUTH_TOKEN_HEADER = "X-Auth-Token";
 
 	public static final String AUTHORIZATION_HEADER = "Authorization";
 }

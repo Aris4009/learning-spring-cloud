@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
@@ -64,6 +67,7 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		if (httpMethod != null) {
 			method = httpMethod.name();
 		}
+		setRequestContextHolder(httpServletRequest);
 		try {
 			RequestLog requestLog = RequestLog.before(this.serviceId, requestId, traceNo, url, httpMethod,
 					httpServletRequest, handler);
@@ -136,5 +140,42 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			traceNo = 0;
 		}
 		return traceNo;
+	}
+
+	private String getSessionId(HttpServletRequest httpServletRequest) {
+		String sessionId = null;
+		if (httpServletRequest.getHeader(MyHttpHeader.X_AUTH_TOKEN_HEADER) != null) {
+			sessionId = httpServletRequest.getHeader(MyHttpHeader.X_AUTH_TOKEN_HEADER);
+		}
+		return sessionId;
+	}
+
+	private String getToken(HttpServletRequest httpServletRequest) {
+		String token = null;
+		if (httpServletRequest.getHeader(MyHttpHeader.AUTHORIZATION_HEADER) != null) {
+			token = httpServletRequest.getHeader(MyHttpHeader.AUTHORIZATION_HEADER);
+		}
+		return token;
+	}
+
+	private void setRequestContextHolder(HttpServletRequest httpServletRequest) {
+		RequestAttributes requestIdAttributes = setRequestAttribute(MyHttpHeader.REQUEST_ID_HEADER,
+				getRequestId(httpServletRequest), httpServletRequest);
+		RequestContextHolder.setRequestAttributes(requestIdAttributes);
+		RequestAttributes traceNoAttributes = setRequestAttribute(MyHttpHeader.TRACE_NO_HEADER,
+				String.valueOf(getTraceNo(httpServletRequest)), httpServletRequest);
+		RequestContextHolder.setRequestAttributes(traceNoAttributes);
+		RequestAttributes sessionAttributes = setRequestAttribute(MyHttpHeader.X_AUTH_TOKEN_HEADER,
+				getSessionId(httpServletRequest), httpServletRequest);
+		RequestContextHolder.setRequestAttributes(sessionAttributes);
+		RequestAttributes tokenAttributes = setRequestAttribute(MyHttpHeader.AUTHORIZATION_HEADER,
+				getToken(httpServletRequest), httpServletRequest);
+		RequestContextHolder.setRequestAttributes(tokenAttributes);
+	}
+
+	private RequestAttributes setRequestAttribute(String key, String value, HttpServletRequest httpServletRequest) {
+		RequestAttributes requestAttributes = new ServletRequestAttributes(httpServletRequest);
+		requestAttributes.setAttribute(key, value, RequestAttributes.SCOPE_REQUEST);
+		return requestAttributes;
 	}
 }

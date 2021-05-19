@@ -33,3 +33,8 @@ selectByUsername
 ===
 
     select #{use("cols")} from user where username=#{username}
+
+list
+===
+
+    select * from user where #{use("condition")} 

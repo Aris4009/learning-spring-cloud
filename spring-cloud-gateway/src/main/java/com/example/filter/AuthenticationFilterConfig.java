@@ -176,7 +176,7 @@ public class AuthenticationFilterConfig {
 
 		private static final String INVALID_TOKEN = "invalid token";
 
-		private static final int HTTP_TIME_OUT = 2000;
+		private static final int HTTP_TIME_OUT = 5000;
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 

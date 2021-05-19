@@ -51,3 +51,18 @@ spring:
     beetlsql:
       worker.id: 1
       data.center.id: 1
+
+feign:
+  client:
+    config:
+      default:
+        loggerLevel: basic
+        requestInterceptors:
+  circuitbreaker:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+      useGzipDecoder: true

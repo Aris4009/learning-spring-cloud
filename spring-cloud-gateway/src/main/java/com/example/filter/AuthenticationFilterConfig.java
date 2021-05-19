@@ -1,7 +1,5 @@
 package com.example.filter;
 
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
-
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -12,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.cloud.gateway.route.Route;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -26,6 +23,7 @@ import org.springframework.web.server.ServerWebExchange;
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
 import reactor.core.publisher.Mono;
 
@@ -172,15 +170,13 @@ public class AuthenticationFilterConfig {
 
 		private static final String AUTHORIZATION_HEADER = "Authorization";
 
-		private static final String SERVICE_ID_HEADER = "serviceId";
-
-		private static final String UNKNOWN_SERVICE_ID_HEADER = "unknown";
-
 		private static final String REQUEST_ID_HEADER = "requestId";
+
+		private static final String TRACE_NO_HEADER = "traceNo";
 
 		private static final String INVALID_TOKEN = "invalid token";
 
-		private static final int HTTP_TIME_OUT = 3000;
+		private static final int HTTP_TIME_OUT = 2000;
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -195,7 +191,6 @@ public class AuthenticationFilterConfig {
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-			setServiceId(exchange);
 			setRequestId(exchange);
 			ServerHttpRequest request = exchange.getRequest();
 			// 非http或https请求，不执行鉴权
@@ -210,39 +205,20 @@ public class AuthenticationFilterConfig {
 				return invalidToken(exchange);
 			}
 
-			int code = authentication(exchange);
-			if (code == 200) {
+			HttpResponse httpResponse = authentication(exchange);
+			if (httpResponse != null && httpResponse.getStatus() == HttpStatus.OK.value()) {
 				String xAuthTokenHeader = xAuthTokenHeader(exchange);
 				String authorizationHeader = authorizationHeader(exchange);
 				request = exchange.getRequest().mutate().headers(httpHeaders -> {
 					httpHeaders.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
 					httpHeaders.add(AUTHORIZATION_HEADER, authorizationHeader);
+					httpHeaders.add(REQUEST_ID_HEADER, httpResponse.header(REQUEST_ID_HEADER));
+					httpHeaders.add(TRACE_NO_HEADER, httpResponse.header(TRACE_NO_HEADER));
 				}).build();
 				return chain.filter(exchange.mutate().request(request).build());
 			} else {
 				return invalidToken(exchange);
 			}
-		}
-
-		/**
-		 * 设置serviceId
-		 * 
-		 * @param exchange
-		 *            ServerWebExchange
-		 */
-		private void setServiceId(ServerWebExchange exchange) {
-			Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
-			String serviceId;
-			if (route == null) {
-				serviceId = UNKNOWN_SERVICE_ID_HEADER;
-			} else {
-				serviceId = route.getId();
-			}
-			ServerHttpRequest request = exchange.getRequest();
-			request = exchange.getRequest().mutate().headers(httpHeaders -> {
-				httpHeaders.add(SERVICE_ID_HEADER, serviceId);
-			}).build();
-			exchange.mutate().request(request).build();
 		}
 
 		/**
@@ -355,28 +331,28 @@ public class AuthenticationFilterConfig {
 
 		/**
 		 * 鉴权
-		 *
-		 * @return 鉴权结果
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 请求结果
 		 */
-		private int authentication(ServerWebExchange exchange) {
-			int code;
+		private HttpResponse authentication(ServerWebExchange exchange) {
+			HttpResponse httpResponse = null;
 			try {
 				ServerHttpRequest request = exchange.getRequest();
-				String serviceId = request.getHeaders().getFirst(SERVICE_ID_HEADER);
 				String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
 				String xAuthTokenHeader = xAuthTokenHeader(exchange);
 				String authorizationHeader = authorizationHeader(exchange);
 				Map<String, String> authParam = new HashMap<>();
 				authParam.put("url", exchange.getRequest().getURI().getRawPath());
-				code = HttpRequest.post(this.authenticationUrl.getAuthenticateUrl())
+				httpResponse = HttpRequest.post(this.authenticationUrl.getAuthenticateUrl())
 						.header(HEADER_X_AUTH_TOKEN, xAuthTokenHeader).header(AUTHORIZATION_HEADER, authorizationHeader)
-						.header(SERVICE_ID_HEADER, serviceId).header(REQUEST_ID_HEADER, requestId)
-						.timeout(HTTP_TIME_OUT).body(JSONUtil.toJsonStr(authParam)).execute().getStatus();
+						.header(REQUEST_ID_HEADER, requestId).header(TRACE_NO_HEADER, "0").timeout(HTTP_TIME_OUT)
+						.body(JSONUtil.toJsonStr(authParam)).execute();
 			} catch (Exception e) {
 				log.debug(e.getMessage(), e);
-				code = HttpStatus.SERVICE_UNAVAILABLE.value();
 			}
-			return code;
+			return httpResponse;
 		}
 
 		@Override

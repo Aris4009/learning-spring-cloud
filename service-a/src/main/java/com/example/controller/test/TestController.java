@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -24,18 +23,15 @@ public class TestController {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private final HttpServletRequest httpServletRequest;
-
 	private final HttpSession httpSession;
 
-	public TestController(HttpServletRequest httpServletRequest, HttpSession httpSession) {
-		this.httpServletRequest = httpServletRequest;
+	public TestController(HttpSession httpSession) {
 		this.httpSession = httpSession;
 	}
 
 	@PostMapping("/hello")
 	public Response<Map<String, Object>> hello(@RequestBody Map<String, Object> params) {
-		return Response.ok(params, httpServletRequest);
+		return Response.ok(params);
 	}
 
 	@PostMapping("/put")
@@ -45,21 +41,21 @@ public class TestController {
 			throw BusinessException.paramsMustBeNotEmptyOrNullError();
 		}
 		httpSession.setAttribute(key, JSON.toJSONString(params));
-		return Response.ok(params, httpServletRequest);
+		return Response.ok(params);
 	}
 
 	@GetMapping("/get")
 	public Response<String> get() {
 		String key = httpSession.getId();
 		log.info("sessionId:{}", key);
-		return Response.ok(JSON.toJSONString(httpSession.getAttribute(key)), httpServletRequest);
+		return Response.ok(JSON.toJSONString(httpSession.getAttribute(key)));
 	}
 
 	@GetMapping("/slow")
 	public Response<String> slowCall() throws InterruptedException {
 		String slow = "slow";
 		Thread.sleep(7000);
-		return Response.ok(JSON.toJSONString(slow), this.httpServletRequest);
+		return Response.ok(JSON.toJSONString(slow));
 	}
 
 	@GetMapping("/retry")
@@ -73,6 +69,6 @@ public class TestController {
 		webRequest.getHeaderNames().forEachRemaining(name -> {
 			map.put(name, webRequest.getHeader(name));
 		});
-		return Response.ok(map, httpServletRequest);
+		return Response.ok(map);
 	}
 }

@@ -1,9 +1,8 @@
 package com.example.controller;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.web.bind.annotation.*;
 
+import com.example.constant.MyHttpHeader;
 import com.example.entity.User;
 import com.example.entity.UserDetail;
 import com.example.exception.BusinessException;
@@ -12,23 +11,23 @@ import com.example.services.ILoginService;
 
 @RestController
 @RequestMapping("/api/v1")
-public class LoginController extends BaseController {
+public class LoginController {
 
 	private final ILoginService loginService;
 
-	public LoginController(ILoginService loginService, HttpServletRequest request) {
-		super(request);
+	public LoginController(ILoginService loginService) {
 		this.loginService = loginService;
 	}
 
 	@PostMapping("/login")
 	public Response<UserDetail> login(@RequestBody User user) throws BusinessException {
-		return Response.ok(this.loginService.login(user), getRequest());
+		return Response.ok(this.loginService.login(user));
 	}
 
 	@RequestMapping("/logout")
-	public Response<Void> logout(@RequestHeader(AUTHORIZATION_HEADER) String token) throws BusinessException {
+	public Response<Void> logout(@RequestHeader(MyHttpHeader.AUTHORIZATION_HEADER) String token)
+			throws BusinessException {
 		this.loginService.logout(token);
-		return Response.ok(getRequest());
+		return Response.ok();
 	}
 }

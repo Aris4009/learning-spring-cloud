@@ -8,10 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.context.request.WebRequest;
 
-import com.example.constant.MyHttpHeader;
 import com.example.exception.BusinessException;
 import com.example.exception.ErrorPathException;
 
@@ -23,7 +20,7 @@ public class ExResponseEntity extends ResponseEntity<Map<String, Object>> {
 
 	private static final String MESSAGE = "message";
 
-	public static Map<String, Object> map(Exception ex, WebRequest request) {
+	public static Map<String, Object> map(Exception ex) {
 		Map<String, Object> map = new HashMap<>();
 		map.put("timestamp", LocalDateTime.now().toString());
 		map.put("status", 500);
@@ -38,10 +35,6 @@ public class ExResponseEntity extends ResponseEntity<Map<String, Object>> {
 		} else {
 			map.put(MESSAGE, "internal error");
 		}
-		ServletWebRequest servletWebRequest = (ServletWebRequest) request;
-		map.put("path", servletWebRequest.getRequest().getRequestURI());
-		map.put("serviceId", request.getHeader(MyHttpHeader.SERVICE_ID_HEADER));
-		map.put("requestId", request.getHeader(MyHttpHeader.REQUEST_ID_HEADER));
 		return map;
 	}
 }

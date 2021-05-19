@@ -2,7 +2,6 @@ package com.example.test;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -20,12 +19,9 @@ public class TestController {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private final HttpServletRequest httpServletRequest;
-
 	private final HttpSession httpSession;
 
-	public TestController(HttpServletRequest httpServletRequest, HttpSession httpSession) {
-		this.httpServletRequest = httpServletRequest;
+	public TestController(HttpSession httpSession) {
 		this.httpSession = httpSession;
 	}
 
@@ -33,7 +29,7 @@ public class TestController {
 	public Response<String> slowCall() throws InterruptedException {
 		String slow = "slow";
 		Thread.sleep(7000);
-		return Response.ok(JSON.toJSONString(slow), this.httpServletRequest);
+		return Response.ok(JSON.toJSONString(slow));
 	}
 
 	@GetMapping("/retry")
@@ -43,6 +39,6 @@ public class TestController {
 
 	@GetMapping("/rate/limiter")
 	public Response<Object> rateLimiter() {
-		return Response.ok(this.httpSession.getId(), this.httpServletRequest);
+		return Response.ok(this.httpSession.getId());
 	}
 }

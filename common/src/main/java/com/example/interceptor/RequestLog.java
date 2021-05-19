@@ -84,6 +84,9 @@ public class RequestLog implements Serializable {
 		this.traceNo = traceNo;
 		this.url = url;
 		this.method = httpMethod.name();
+		LocalDateTime localDateTime = LocalDateTime.now();
+		this.time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
+		this.timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 		try {
 			if (!(handler instanceof ResourceHttpRequestHandler)) {
 				HandlerMethod handlerMethod = (HandlerMethod) handler;
@@ -177,25 +180,52 @@ public class RequestLog implements Serializable {
 		}
 	}
 
-	/**
-	 * 设置时间
-	 */
-	public void setTime() {
+	public static RequestLog before(String serviceId, String requestId, int traceNo, String url, HttpMethod httpMethod,
+			HttpServletRequest httpServletRequest, Object handler) throws BusinessException {
+		RequestLog requestLog = new RequestLog(serviceId, requestId, traceNo, url, httpMethod, httpServletRequest,
+				handler);
+		requestLog.setType(0);
+		return requestLog;
+	}
+
+	public static RequestLog afterType(RequestLog beforeRequestLog) {
+		RequestLog requestLog = new RequestLog();
+		requestLog.setServiceId(beforeRequestLog.getServiceId());
+		requestLog.setRequestId(beforeRequestLog.getRequestId());
+		requestLog.setTraceNo(beforeRequestLog.getTraceNo());
+		requestLog.setUrl(beforeRequestLog.getUrl());
 		LocalDateTime localDateTime = LocalDateTime.now();
-		this.time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
-		this.timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+		long time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
+		String timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+		requestLog.setTime(time);
+		requestLog.setTimeStr(timeStr);
+		requestLog.setMethod(beforeRequestLog.getMethod());
+		requestLog.setParams(beforeRequestLog.getParams());
+		requestLog.setMultipartParams(beforeRequestLog.getMultipartParams());
+		requestLog.setController(beforeRequestLog.getController());
+		requestLog.setControllerMethod(beforeRequestLog.getControllerMethod());
+		requestLog.setException(beforeRequestLog.getException());
+		requestLog.setType(1);
+		requestLog.setErrorMsg(beforeRequestLog.getErrorMsg());
+		return requestLog;
 	}
 
-	public void beforeType() {
-		this.type = 0;
-	}
-
-	public void afterType() {
-		this.type = 1;
-	}
-
-	public void errorType() {
-		this.type = 2;
+	public static RequestLog errorType(String serviceId, String requestId, int traceNo, String url, String httpMethod,
+			Exception e) {
+		RequestLog requestLog = new RequestLog();
+		requestLog.setServiceId(serviceId);
+		requestLog.setRequestId(requestId);
+		requestLog.setTraceNo(traceNo);
+		requestLog.setUrl(url);
+		requestLog.setMethod(httpMethod);
+		requestLog.setException(e);
+		requestLog.setType(2);
+		LocalDateTime localDateTime = LocalDateTime.now();
+		long time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
+		String timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+		requestLog.setTime(time);
+		requestLog.setTimeStr(timeStr);
+		return requestLog;
 	}
 
 	@Override

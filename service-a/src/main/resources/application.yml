@@ -58,6 +58,7 @@ feign:
       default:
         loggerLevel: basic
         requestInterceptors:
+          - com.example.remote.interceptor.MyRequestInterceptor
   circuitbreaker:
     enabled: true
   compression:

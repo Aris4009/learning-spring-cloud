@@ -35,6 +35,14 @@ spring:
     port: 6379
     schema: redis
     type: 0
+  datasource:
+    enable: false
+    url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
+    username: root
+    password:
+    beetlsql:
+      worker.id: 1
+      data.center.id: 2
   session:
     store-type: redis
     timeout: 30m

@@ -1,6 +1,8 @@
 package com.example.interceptor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -122,6 +124,7 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			log.info("{}", requestLog);
 		}
 		StoreLogUtil.storeLog(storeLogList, requestLog);
+		RequestContextHolder.resetRequestAttributes();
 	}
 
 	private String getRequestId(HttpServletRequest httpServletRequest) {
@@ -159,23 +162,14 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 	}
 
 	private void setRequestContextHolder(HttpServletRequest httpServletRequest) {
-		RequestAttributes requestIdAttributes = setRequestAttribute(MyHttpHeader.REQUEST_ID_HEADER,
-				getRequestId(httpServletRequest), httpServletRequest);
-		RequestContextHolder.setRequestAttributes(requestIdAttributes);
-		RequestAttributes traceNoAttributes = setRequestAttribute(MyHttpHeader.TRACE_NO_HEADER,
-				String.valueOf(getTraceNo(httpServletRequest)), httpServletRequest);
-		RequestContextHolder.setRequestAttributes(traceNoAttributes);
-		RequestAttributes sessionAttributes = setRequestAttribute(MyHttpHeader.X_AUTH_TOKEN_HEADER,
-				getSessionId(httpServletRequest), httpServletRequest);
-		RequestContextHolder.setRequestAttributes(sessionAttributes);
-		RequestAttributes tokenAttributes = setRequestAttribute(MyHttpHeader.AUTHORIZATION_HEADER,
-				getToken(httpServletRequest), httpServletRequest);
-		RequestContextHolder.setRequestAttributes(tokenAttributes);
-	}
-
-	private RequestAttributes setRequestAttribute(String key, String value, HttpServletRequest httpServletRequest) {
+		Map<String, String> map = new HashMap<>();
+		map.put(MyHttpHeader.REQUEST_ID_HEADER, getRequestId(httpServletRequest));
+		map.put(MyHttpHeader.TRACE_NO_HEADER, String.valueOf(getTraceNo(httpServletRequest)));
+		map.put(MyHttpHeader.X_AUTH_TOKEN_HEADER, getSessionId(httpServletRequest));
+		map.put(MyHttpHeader.AUTHORIZATION_HEADER, getToken(httpServletRequest));
 		RequestAttributes requestAttributes = new ServletRequestAttributes(httpServletRequest);
-		requestAttributes.setAttribute(key, value, RequestAttributes.SCOPE_REQUEST);
-		return requestAttributes;
+		requestAttributes.setAttribute(RequestAttributes.REFERENCE_REQUEST, requestAttributes,
+				RequestAttributes.SCOPE_REQUEST);
+		RequestContextHolder.setRequestAttributes(requestAttributes);
 	}
 }

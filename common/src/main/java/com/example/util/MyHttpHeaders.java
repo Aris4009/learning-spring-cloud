@@ -1,14 +1,15 @@
-package com.example.constant;
+package com.example.util;
 
-public final class MyHttpHeader {
+public final class MyHttpHeaders {
 
-	private MyHttpHeader() {
-
+	private MyHttpHeaders() {
 	}
+
+	public static final String SERVICE_ID_HEADER = "serviceId";
 
 	public static final String REQUEST_ID_HEADER = "requestId";
 
-	public static final String SERVICE_ID_HEADER = "serviceId";
+	public static final String METHOD_HEADER = "method";
 
 	public static final String TRACE_NO_HEADER = "traceNo";
 

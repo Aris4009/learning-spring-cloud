@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -18,13 +19,16 @@ import com.example.exception.BusinessException;
 import com.example.json.JSON;
 import com.example.request.wrapper.RequestWrapper;
 import com.example.request.wrapper.RequestWrapperFacade;
+import com.example.util.MyHttpHeaders;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * 请求日志对象
  */
 @Data
+@Builder
 public class RequestLog implements Serializable {
 
 	private static final long serialVersionUID = -1032433027159174788L;
@@ -75,6 +79,32 @@ public class RequestLog implements Serializable {
 	private static final int CAPACITY = 1024;
 
 	public RequestLog() {
+	}
+
+	public static RequestLog preHandle(Map<String, String> headers, HttpServletRequest httpServletRequest,
+			Object handler) throws BusinessException {
+		LocalDateTime localDateTime = LocalDateTime.now();
+		RequestLog requestLog = new RequestLogBuilder().serviceId(headers.get(MyHttpHeaders.SERVICE_ID_HEADER))
+				.requestId(headers.get(MyHttpHeaders.REQUEST_ID_HEADER))
+				.traceNo(Integer.parseInt(headers.get(MyHttpHeaders.TRACE_NO_HEADER)))
+				.url(headers.get(MyHttpHeaders.URL_HEADER)).method(headers.get(MyHttpHeaders.METHOD_HEADER))
+				.time(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000)
+				.timeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build();
+		try {
+			if (!(handler instanceof ResourceHttpRequestHandler)) {
+				HandlerMethod handlerMethod = (HandlerMethod) handler;
+				requestLog.setController(handlerMethod.getBeanType().getName());
+				requestLog.setControllerMethod(handlerMethod.getMethod().getName());
+			}
+
+			// 解析请求参数
+			requestLog.setParams(
+					getParams(httpServletRequest, HttpMethod.resolve(headers.get(MyHttpHeaders.METHOD_HEADER))));
+			requestLog.setMultipartParams(getMultipartFilesInfo(httpServletRequest,
+					HttpMethod.resolve(headers.get(MyHttpHeaders.METHOD_HEADER))));
+		} catch (Exception e) {
+			throw new BusinessException(e);
+		}
 	}
 
 	public RequestLog(String serviceId, String requestId, int traceNo, String url, HttpMethod httpMethod,

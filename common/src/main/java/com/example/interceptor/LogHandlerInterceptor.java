@@ -3,7 +3,6 @@ package com.example.interceptor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,9 +18,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
-import com.example.constant.MyHttpHeader;
 import com.example.exception.BusinessException;
 import com.example.exception.ErrorPathException;
+import com.example.util.MyResolveHttpHeaders;
 
 public class LogHandlerInterceptor implements HandlerInterceptor {
 
@@ -54,16 +53,16 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		if (httpMethod != HttpMethod.GET && httpMethod != HttpMethod.POST) {
 			throw new BusinessException("unsupported " + httpMethod + " method");
 		}
-		httpServletResponse.setHeader(MyHttpHeader.SERVICE_ID_HEADER, this.serviceId);
+		httpServletResponse.setHeader(MyResolveHttpHeaders.SERVICE_ID_HEADER, this.serviceId);
 
 		String requestId = getRequestId(httpServletRequest);
-		httpServletResponse.setHeader(MyHttpHeader.REQUEST_ID_HEADER, requestId);
+		httpServletResponse.setHeader(MyResolveHttpHeaders.REQUEST_ID_HEADER, requestId);
 
 		int traceNo = getTraceNo(httpServletRequest);
-		httpServletResponse.setHeader(MyHttpHeader.TRACE_NO_HEADER, String.valueOf(traceNo));
+		httpServletResponse.setHeader(MyResolveHttpHeaders.TRACE_NO_HEADER, String.valueOf(traceNo));
 
 		String url = httpServletRequest.getRequestURI();
-		httpServletResponse.setHeader(MyHttpHeader.URL_HEADER, url);
+		httpServletResponse.setHeader(MyResolveHttpHeaders.URL_HEADER, url);
 
 		String method = null;
 		if (httpMethod != null) {
@@ -127,46 +126,9 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		RequestContextHolder.resetRequestAttributes();
 	}
 
-	private String getRequestId(HttpServletRequest httpServletRequest) {
-		String id = httpServletRequest.getHeader(MyHttpHeader.REQUEST_ID_HEADER);
-		if (id == null) {
-			return UUID.randomUUID().toString().replace("-", "");
-		}
-		return id;
-	}
-
-	private int getTraceNo(HttpServletRequest httpServletRequest) {
-		int traceNo;
-		if (httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER) != null) {
-			traceNo = Integer.parseInt(httpServletRequest.getHeader(MyHttpHeader.TRACE_NO_HEADER)) + 1;
-		} else {
-			traceNo = 0;
-		}
-		return traceNo;
-	}
-
-	private String getSessionId(HttpServletRequest httpServletRequest) {
-		String sessionId = null;
-		if (httpServletRequest.getHeader(MyHttpHeader.X_AUTH_TOKEN_HEADER) != null) {
-			sessionId = httpServletRequest.getHeader(MyHttpHeader.X_AUTH_TOKEN_HEADER);
-		}
-		return sessionId;
-	}
-
-	private String getToken(HttpServletRequest httpServletRequest) {
-		String token = null;
-		if (httpServletRequest.getHeader(MyHttpHeader.AUTHORIZATION_HEADER) != null) {
-			token = httpServletRequest.getHeader(MyHttpHeader.AUTHORIZATION_HEADER);
-		}
-		return token;
-	}
-
 	private void setRequestContextHolder(HttpServletRequest httpServletRequest) {
 		Map<String, String> map = new HashMap<>();
-		map.put(MyHttpHeader.REQUEST_ID_HEADER, getRequestId(httpServletRequest));
-		map.put(MyHttpHeader.TRACE_NO_HEADER, String.valueOf(getTraceNo(httpServletRequest)));
-		map.put(MyHttpHeader.X_AUTH_TOKEN_HEADER, getSessionId(httpServletRequest));
-		map.put(MyHttpHeader.AUTHORIZATION_HEADER, getToken(httpServletRequest));
+
 		RequestAttributes requestAttributes = new ServletRequestAttributes(httpServletRequest);
 		requestAttributes.setAttribute(RequestAttributes.REFERENCE_REQUEST, requestAttributes,
 				RequestAttributes.SCOPE_REQUEST);

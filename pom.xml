@@ -34,7 +34,7 @@
         <spring.session.version>2020.0.3</spring.session.version>
         <redisson.version>3.15.5</redisson.version>
         <lettuce.version>6.1.0.RELEASE</lettuce.version>
-        <beetlsql.version>3.3.13-RELEASE</beetlsql.version>
+        <beetlsql.version>3.4.0-RELEASE</beetlsql.version>
         <spring.data.redis.reactive.version>2.4.5</spring.data.redis.reactive.version>
         <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
         <reactor.version>2020.0.6</reactor.version>

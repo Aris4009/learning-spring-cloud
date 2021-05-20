@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,7 +18,7 @@ import com.example.exception.BusinessException;
 import com.example.json.JSON;
 import com.example.request.wrapper.RequestWrapper;
 import com.example.request.wrapper.RequestWrapperFacade;
-import com.example.util.MyHttpHeaders;
+import com.example.util.MyResolveHttpHeaders;
 
 import lombok.Builder;
 import lombok.Data;
@@ -78,18 +77,24 @@ public class RequestLog implements Serializable {
 
 	private static final int CAPACITY = 1024;
 
-	public RequestLog() {
+	private RequestLog() {
 	}
 
-	public static RequestLog preHandle(Map<String, String> headers, HttpServletRequest httpServletRequest,
+	public static final int BEFORE = 0;
+
+	public static final int AFTER = 1;
+
+	public static final int ERROR = 2;
+
+	public static RequestLog before(MyResolveHttpHeaders myResolveHttpHeaders, HttpServletRequest httpServletRequest,
 			Object handler) throws BusinessException {
 		LocalDateTime localDateTime = LocalDateTime.now();
-		RequestLog requestLog = new RequestLogBuilder().serviceId(headers.get(MyHttpHeaders.SERVICE_ID_HEADER))
-				.requestId(headers.get(MyHttpHeaders.REQUEST_ID_HEADER))
-				.traceNo(Integer.parseInt(headers.get(MyHttpHeaders.TRACE_NO_HEADER)))
-				.url(headers.get(MyHttpHeaders.URL_HEADER)).method(headers.get(MyHttpHeaders.METHOD_HEADER))
+		RequestLog requestLog = new RequestLogBuilder().serviceId(myResolveHttpHeaders.getServiceId())
+				.requestId(myResolveHttpHeaders.getRequestId())
+				.traceNo(Integer.parseInt(myResolveHttpHeaders.getTraceNo())).url(myResolveHttpHeaders.getUrl())
+				.method(myResolveHttpHeaders.getMethod())
 				.time(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000)
-				.timeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build();
+				.timeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).type(BEFORE).build();
 		try {
 			if (!(handler instanceof ResourceHttpRequestHandler)) {
 				HandlerMethod handlerMethod = (HandlerMethod) handler;
@@ -98,50 +103,33 @@ public class RequestLog implements Serializable {
 			}
 
 			// 解析请求参数
-			requestLog.setParams(
-					getParams(httpServletRequest, HttpMethod.resolve(headers.get(MyHttpHeaders.METHOD_HEADER))));
-			requestLog.setMultipartParams(getMultipartFilesInfo(httpServletRequest,
-					HttpMethod.resolve(headers.get(MyHttpHeaders.METHOD_HEADER))));
+			requestLog.setParams(getParams(httpServletRequest, HttpMethod.resolve(myResolveHttpHeaders.getMethod())));
+			requestLog.setMultipartParams(
+					getMultipartFilesInfo(httpServletRequest, HttpMethod.resolve(myResolveHttpHeaders.getMethod())));
 		} catch (Exception e) {
 			throw new BusinessException(e);
 		}
+		return requestLog;
 	}
 
-	public RequestLog(String serviceId, String requestId, int traceNo, String url, HttpMethod httpMethod,
-			HttpServletRequest httpServletRequest, Object handler) throws BusinessException {
-		this.serviceId = serviceId;
-		this.requestId = requestId;
-		this.traceNo = traceNo;
-		this.url = url;
-		this.method = httpMethod.name();
+	public static RequestLog modify(RequestLog beforeRequestLog, int type, Exception e) {
 		LocalDateTime localDateTime = LocalDateTime.now();
-		this.time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
-		this.timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-		try {
-			if (!(handler instanceof ResourceHttpRequestHandler)) {
-				HandlerMethod handlerMethod = (HandlerMethod) handler;
-				this.controller = handlerMethod.getBeanType().getName();
-				this.controllerMethod = handlerMethod.getMethod().getName();
-			}
-
-			// 解析请求参数
-			this.params = getParams(httpServletRequest, httpMethod);
-			this.multipartParams = getMultipartFilesInfo(httpServletRequest, httpMethod);
-		} catch (Exception e) {
-			throw new BusinessException(e);
+		beforeRequestLog.setTime(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000);
+		beforeRequestLog.setTimeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+		beforeRequestLog.setType(type);
+		if (e != null) {
+			beforeRequestLog.setException(e);
 		}
+		return beforeRequestLog;
 	}
 
 	/**
 	 * 获取GET/POST方法请求参数
 	 *
-	 * @param httpServletRequest
-	 *            原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method
-	 *            HttpMethod
+	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method             HttpMethod
 	 * @return 返回请求体
-	 * @throws BusinessException
-	 *             异常
+	 * @throws BusinessException 异常
 	 */
 	public static String getParams(HttpServletRequest httpServletRequest, HttpMethod method) throws BusinessException {
 		try {
@@ -162,13 +150,10 @@ public class RequestLog implements Serializable {
 	/**
 	 * 获取POST multipart/form-data中上传的文件信息
 	 *
-	 * @param httpServletRequest
-	 *            原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method
-	 *            HttpMethod
+	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method             HttpMethod
 	 * @return 返回文件信息（文件名-文件大小的key-value对）
-	 * @throws BusinessException
-	 *             异常
+	 * @throws BusinessException 异常
 	 */
 	public static String getMultipartFilesInfo(HttpServletRequest httpServletRequest, HttpMethod method)
 			throws BusinessException {
@@ -194,8 +179,7 @@ public class RequestLog implements Serializable {
 	/**
 	 * 设置异常
 	 * 
-	 * @param exception
-	 *            异常信息
+	 * @param exception 异常信息
 	 */
 	public void setException(Exception exception) {
 		if (exception == null) {
@@ -208,54 +192,6 @@ public class RequestLog implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static RequestLog before(String serviceId, String requestId, int traceNo, String url, HttpMethod httpMethod,
-			HttpServletRequest httpServletRequest, Object handler) throws BusinessException {
-		RequestLog requestLog = new RequestLog(serviceId, requestId, traceNo, url, httpMethod, httpServletRequest,
-				handler);
-		requestLog.setType(0);
-		return requestLog;
-	}
-
-	public static RequestLog afterType(RequestLog beforeRequestLog) {
-		RequestLog requestLog = new RequestLog();
-		requestLog.setServiceId(beforeRequestLog.getServiceId());
-		requestLog.setRequestId(beforeRequestLog.getRequestId());
-		requestLog.setTraceNo(beforeRequestLog.getTraceNo());
-		requestLog.setUrl(beforeRequestLog.getUrl());
-		LocalDateTime localDateTime = LocalDateTime.now();
-		long time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
-		String timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-		requestLog.setTime(time);
-		requestLog.setTimeStr(timeStr);
-		requestLog.setMethod(beforeRequestLog.getMethod());
-		requestLog.setParams(beforeRequestLog.getParams());
-		requestLog.setMultipartParams(beforeRequestLog.getMultipartParams());
-		requestLog.setController(beforeRequestLog.getController());
-		requestLog.setControllerMethod(beforeRequestLog.getControllerMethod());
-		requestLog.setException(beforeRequestLog.getException());
-		requestLog.setType(1);
-		requestLog.setErrorMsg(beforeRequestLog.getErrorMsg());
-		return requestLog;
-	}
-
-	public static RequestLog errorType(String serviceId, String requestId, int traceNo, String url, String httpMethod,
-			Exception e) {
-		RequestLog requestLog = new RequestLog();
-		requestLog.setServiceId(serviceId);
-		requestLog.setRequestId(requestId);
-		requestLog.setTraceNo(traceNo);
-		requestLog.setUrl(url);
-		requestLog.setMethod(httpMethod);
-		requestLog.setException(e);
-		requestLog.setType(2);
-		LocalDateTime localDateTime = LocalDateTime.now();
-		long time = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000;
-		String timeStr = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-		requestLog.setTime(time);
-		requestLog.setTimeStr(timeStr);
-		return requestLog;
 	}
 
 	@Override

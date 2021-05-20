@@ -1,6 +1,5 @@
 package com.example.interceptor;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,15 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
 import com.example.exception.BusinessException;
-import com.example.exception.ErrorPathException;
-import com.example.util.MyResolveHttpHeaders;
+import com.example.util.MyRequestContext;
 
 public class LogHandlerInterceptor implements HandlerInterceptor {
 
@@ -49,58 +45,33 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler) throws Exception {
-		HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
-		if (httpMethod != HttpMethod.GET && httpMethod != HttpMethod.POST) {
-			throw new BusinessException("unsupported " + httpMethod + " method");
-		}
-		httpServletResponse.setHeader(MyResolveHttpHeaders.SERVICE_ID_HEADER, this.serviceId);
-
-		String requestId = getRequestId(httpServletRequest);
-		httpServletResponse.setHeader(MyResolveHttpHeaders.REQUEST_ID_HEADER, requestId);
-
-		int traceNo = getTraceNo(httpServletRequest);
-		httpServletResponse.setHeader(MyResolveHttpHeaders.TRACE_NO_HEADER, String.valueOf(traceNo));
-
-		String url = httpServletRequest.getRequestURI();
-		httpServletResponse.setHeader(MyResolveHttpHeaders.URL_HEADER, url);
-
-		String method = null;
-		if (httpMethod != null) {
-			method = httpMethod.name();
-		}
-		setRequestContextHolder(httpServletRequest);
+		MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
 		try {
-			RequestLog requestLog = RequestLog.before(this.serviceId, requestId, traceNo, url, httpMethod,
-					httpServletRequest, handler);
-			if (url.equals("/error")) {
+			RequestLog requestLog = MyRequestContext.getRequestLog();
+			Map<String, Object> map = MyRequestContext.getRequestContextMap();
+			if ("/error".equals(requestLog.getUrl())) {
 				return true;
 			}
 
 			if (requestLogConfig.isPre()) {
 				log.info("{}", requestLog);
 			}
-			httpServletRequest.setAttribute(REQUEST_LOG_ATTRIBUTE, requestLog);
 			StoreLogUtil.storeLog(storeLogList, requestLog);
 			return true;
 		} catch (Exception e) {
-			// 封装预处理错误，由于此处发生异常，导致afterCompletion方法无法执行而采取的补救措施
-			RequestLog requestLog = RequestLog.errorType(this.serviceId, requestId, traceNo, url, method, e);
+			BusinessException businessException;
+			if (e instanceof HttpMessageNotReadableException) {
+				businessException = new BusinessException("unsupported params type");
+			} else if (e instanceof HttpRequestMethodNotSupportedException) {
+				businessException = new BusinessException("unsupported method");
+			} else {
+				businessException = new BusinessException(e);
+			}
+			RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.ERROR,
+					businessException);
 			if (requestLogConfig.isError()) {
 				log.error("{}", requestLog);
-			} else {
-				if (e instanceof HttpMessageNotReadableException) {
-					requestLog.setErrorMsg("unsupported params type");
-				} else if (e instanceof HttpRequestMethodNotSupportedException) {
-					requestLog.setErrorMsg("unsupported method");
-				} else if (e instanceof BusinessException) {
-					requestLog.setErrorMsg(e.getMessage());
-				} else if (e instanceof ErrorPathException) {
-					requestLog.setErrorMsg(e.getMessage());
-				} else {
-					requestLog.setException(e);
-				}
 			}
-			httpServletRequest.setAttribute(REQUEST_LOG_ATTRIBUTE, requestLog);
 			StoreLogUtil.storeLog(storeLogList, requestLog);
 			throw e;
 		}
@@ -113,9 +84,7 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		if (method != HttpMethod.GET && method != HttpMethod.POST) {
 			return;
 		}
-		RequestLog beforeRequestLog = (RequestLog) httpServletRequest.getAttribute(REQUEST_LOG_ATTRIBUTE);
-		RequestLog requestLog = RequestLog.afterType(beforeRequestLog);
-
+		RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.AFTER, null);
 		Exception exception = requestLog.getException();
 		if (requestLogConfig.isError() && exception != null) {
 			log.error("{}", requestLog);
@@ -124,14 +93,5 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		}
 		StoreLogUtil.storeLog(storeLogList, requestLog);
 		RequestContextHolder.resetRequestAttributes();
-	}
-
-	private void setRequestContextHolder(HttpServletRequest httpServletRequest) {
-		Map<String, String> map = new HashMap<>();
-
-		RequestAttributes requestAttributes = new ServletRequestAttributes(httpServletRequest);
-		requestAttributes.setAttribute(RequestAttributes.REFERENCE_REQUEST, requestAttributes,
-				RequestAttributes.SCOPE_REQUEST);
-		RequestContextHolder.setRequestAttributes(requestAttributes);
 	}
 }

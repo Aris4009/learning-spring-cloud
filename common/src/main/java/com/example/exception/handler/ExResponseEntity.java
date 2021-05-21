@@ -1,7 +1,5 @@
 package com.example.exception.handler;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,9 +18,13 @@ public final class ExResponseEntity extends ResponseEntity<Map<String, Object>> 
 		super(map, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	private static final String MESSAGE = "message";
+	public static final String MESSAGE = "message";
 
-	private static final String STATUS = "status";
+	public static final String STATUS = "status";
+
+	public static final int INTERNAL_STATUS = 500;
+
+	public static final int INVALID_TOKEN_STATUS = 4001;
 
 	public static Map<String, Object> map(Exception ex) {
 		Map<String, Object> map = new HashMap<>();
@@ -47,25 +49,22 @@ public final class ExResponseEntity extends ResponseEntity<Map<String, Object>> 
 
 	private static Map<String, Object> internalError(Exception e) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(STATUS, 500);
+		map.put(STATUS, INTERNAL_STATUS);
 		map.put(MESSAGE, e.getMessage());
-		map.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 		return map;
 	}
 
 	private static Map<String, Object> internalError(String... message) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(STATUS, 500);
+		map.put(STATUS, INTERNAL_STATUS);
 		map.put(MESSAGE, message);
-		map.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 		return map;
 	}
 
 	private static Map<String, Object> authenticationError(Exception e) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(STATUS, 407);
+		map.put(STATUS, INVALID_TOKEN_STATUS);
 		map.put(MESSAGE, e.getMessage());
-		map.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 		return map;
 	}
 }

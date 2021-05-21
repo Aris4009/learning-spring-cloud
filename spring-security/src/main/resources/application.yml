@@ -21,7 +21,7 @@ nacos:
 server:
   port: 8003
   error:
-    path: /security/error
+    path: /error
 spring:
   application:
     name: spring-security

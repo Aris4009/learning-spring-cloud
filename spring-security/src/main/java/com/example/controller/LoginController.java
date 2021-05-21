@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.entity.User;
 import com.example.entity.UserDetail;
+import com.example.exception.AuthenticationException;
 import com.example.exception.BusinessException;
 import com.example.response.entity.Response;
 import com.example.services.ILoginService;
@@ -26,7 +27,7 @@ public class LoginController {
 
 	@RequestMapping("/logout")
 	public Response<Void> logout(@RequestHeader(MyHttpHeaders.AUTHORIZATION_HEADER) String token)
-			throws BusinessException {
+			throws AuthenticationException {
 		this.loginService.logout(token);
 		return Response.ok();
 	}

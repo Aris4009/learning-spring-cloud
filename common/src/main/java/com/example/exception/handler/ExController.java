@@ -1,40 +1,48 @@
 package com.example.exception.handler;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.boot.autoconfigure.web.servlet.error.AbstractErrorController;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
+import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.WebRequest;
+
+import com.example.response.entity.Response;
 
 /**
  * 处理错误页面
  */
-@Controller
-public class ExController extends AbstractErrorController {
-
-	public ExController(ErrorAttributes errorAttributes) {
-		super(errorAttributes);
-	}
+@RestController
+public class ExController implements ErrorController {
 
 	@RequestMapping("/error")
-	public ResponseEntity<Map<String, Object>> ex(HttpServletRequest request) {
+	public Response<Void> ex(WebRequest request, HttpServletResponse response) {
 		ErrorAttributeOptions options = ErrorAttributeOptions.defaults();
-		Map<String, Object> rawMap = getErrorAttributes(request, options);
+		DefaultErrorAttributes defaultErrorAttributes = new DefaultErrorAttributes();
+		Map<String, Object> rawMap = defaultErrorAttributes.getErrorAttributes(request, options);
 		HttpStatus httpStatus = getStatus(request);
-		Map<String, Object> map = new HashMap<>();
-		map.put("message", rawMap.get("error").toString().toLowerCase());
-		map.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-		map.put("status", rawMap.get("status"));
-		return new ResponseEntity<>(map, httpStatus);
+		response.setStatus(HttpStatus.OK.value());
+		return Response.fail(httpStatus.value(), rawMap.get("error").toString().toLowerCase());
+	}
+
+	protected HttpStatus getStatus(WebRequest request) {
+		Integer httpStatus = (Integer) request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE,
+				RequestAttributes.SCOPE_REQUEST);
+		if (httpStatus == null) {
+			return HttpStatus.INTERNAL_SERVER_ERROR;
+		}
+		try {
+			return HttpStatus.valueOf(httpStatus);
+		} catch (Exception ex) {
+			return HttpStatus.INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override

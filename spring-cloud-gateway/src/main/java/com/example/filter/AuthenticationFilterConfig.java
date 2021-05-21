@@ -178,6 +178,8 @@ public class AuthenticationFilterConfig {
 
 		private static final int HTTP_TIME_OUT = 5000;
 
+		public static final int INVALID_TOKEN_STATUS = 4001;
+
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
 		public AuthenticationFilter(List<WhiteUrl> whiteUrlList, AuthenticationUrl authenticationUrl) {
@@ -301,10 +303,9 @@ public class AuthenticationFilterConfig {
 		 */
 		private Mono<Void> serviceUnavailable(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
-			response.setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 			Response<Void> r = Response.fail(HttpStatus.SERVICE_UNAVAILABLE.value(),
-					HttpStatus.SERVICE_UNAVAILABLE.name().toLowerCase());
+					HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase().toLowerCase());
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
 
@@ -317,9 +318,8 @@ public class AuthenticationFilterConfig {
 		 */
 		private Mono<Void> invalidToken(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
-			response.setStatusCode(HttpStatus.PROXY_AUTHENTICATION_REQUIRED);
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-			Response<Void> r = Response.fail(HttpStatus.PROXY_AUTHENTICATION_REQUIRED.value(), INVALID_TOKEN);
+			Response<Void> r = Response.fail(INVALID_TOKEN_STATUS, INVALID_TOKEN);
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
 

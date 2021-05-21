@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.springframework.web.bind.annotation.*;
 
-import com.example.exception.BusinessException;
+import com.example.exception.AuthenticationException;
 import com.example.response.entity.Response;
 import com.example.services.IAuthService;
 import com.example.util.MyHttpHeaders;
@@ -25,20 +25,20 @@ public class AuthController {
 
 	@RequestMapping("/refresh/token")
 	public Response<String> refresh(@RequestHeader(MyHttpHeaders.AUTHORIZATION_HEADER) String token)
-			throws BusinessException {
+			throws AuthenticationException {
 		return Response.ok(this.authService.refresh(token));
 	}
 
 	@RequestMapping("/verify/token")
 	public Response<Void> verify(@RequestHeader(MyHttpHeaders.AUTHORIZATION_HEADER) String token)
-			throws BusinessException {
+			throws AuthenticationException {
 		this.authService.verify(token);
 		return Response.ok();
 	}
 
 	@PostMapping("/authenticate")
 	public Response<Void> verify(@RequestHeader(MyHttpHeaders.AUTHORIZATION_HEADER) String token,
-			@RequestBody Map<String, String> url) throws BusinessException {
+			@RequestBody Map<String, String> url) throws AuthenticationException {
 		this.authService.verify(token, MapUtil.getStr(url, URL));
 		return Response.ok();
 	}

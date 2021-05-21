@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.example.entity.JwtProp;
 import com.example.entity.UserDetail;
-import com.example.exception.BusinessException;
+import com.example.exception.AuthenticationException;
 import com.example.json.JSON;
 import com.google.gson.reflect.TypeToken;
 
@@ -60,14 +60,14 @@ public class JwtUtils {
 		return token;
 	}
 
-	public String refresh(String token) throws BusinessException {
+	public String refresh(String token) throws AuthenticationException {
 		int code = verify(token);
 		if (code == SUCCESS) {
 			UserDetail userDetail = parse(token, new TypeToken<UserDetail>() {
 			});
 			return sign(userDetail);
 		} else {
-			throw new BusinessException(INVALID_TOKEN);
+			throw new AuthenticationException(INVALID_TOKEN);
 		}
 	}
 
@@ -90,19 +90,19 @@ public class JwtUtils {
 		return code;
 	}
 
-	public <T> T parse(String token, TypeToken<T> typeToken) throws BusinessException {
+	public <T> T parse(String token, TypeToken<T> typeToken) throws AuthenticationException {
 		int code = verify(token);
 		if (code < 0) {
-			throw new BusinessException(INVALID_TOKEN);
+			throw new AuthenticationException(INVALID_TOKEN);
 		}
 		String json = parseClaimsJws(token).getBody().get(CLAIM_KEY).toString();
 		return JSON.parse(json, typeToken);
 	}
 
-	public void removeSession(String token) throws BusinessException {
+	public void removeSession(String token) throws AuthenticationException {
 		int code = verify(token);
 		if (code < 0) {
-			throw new BusinessException(INVALID_TOKEN);
+			throw new AuthenticationException(INVALID_TOKEN);
 		}
 		if (this.jwtProp.isSessionVerify()) {
 			this.httpSession.invalidate();

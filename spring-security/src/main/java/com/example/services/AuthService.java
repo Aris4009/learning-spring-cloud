@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import com.example.dao.PermissionDao;
 import com.example.entity.Permission;
 import com.example.entity.UserDetail;
-import com.example.exception.BusinessException;
+import com.example.exception.AuthenticationException;
 import com.example.utils.JwtUtils;
 import com.google.gson.reflect.TypeToken;
 
@@ -28,30 +28,30 @@ public class AuthService implements IAuthService {
 	}
 
 	@Override
-	public String refresh(String token) throws BusinessException {
+	public String refresh(String token) throws AuthenticationException {
 		if (StrUtil.isBlankIfStr(token)) {
-			throw new BusinessException(JwtUtils.INVALID_TOKEN);
+			throw new AuthenticationException(JwtUtils.INVALID_TOKEN);
 		}
 		try {
 			return this.jwtUtils.refresh(token);
 		} catch (Exception e) {
 			log.debug(e.getMessage(), e);
-			throw new BusinessException(JwtUtils.INVALID_TOKEN);
+			throw new AuthenticationException(JwtUtils.INVALID_TOKEN);
 		}
 	}
 
 	@Override
-	public void verify(String token) throws BusinessException {
+	public void verify(String token) throws AuthenticationException {
 		int code = this.jwtUtils.verify(token);
 		if (code < 0) {
-			throw new BusinessException(JwtUtils.INVALID_TOKEN);
+			throw new AuthenticationException(JwtUtils.INVALID_TOKEN);
 		}
 	}
 
 	@Override
-	public void verify(String token, String url) throws BusinessException {
+	public void verify(String token, String url) throws AuthenticationException {
 		if (StrUtil.isBlankIfStr(token) || StrUtil.isBlankIfStr(url)) {
-			throw new BusinessException(JwtUtils.UNANUTHORIZED);
+			throw new AuthenticationException(JwtUtils.UNANUTHORIZED);
 		}
 		UserDetail userDetail = this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
 		});
@@ -60,7 +60,7 @@ public class AuthService implements IAuthService {
 		permission.setUrl(url);
 		int count = this.permissionDao.verifyPermissionByRoleId(permission);
 		if (count != 1) {
-			throw new BusinessException(JwtUtils.UNANUTHORIZED);
+			throw new AuthenticationException(JwtUtils.UNANUTHORIZED);
 		}
 	}
 }

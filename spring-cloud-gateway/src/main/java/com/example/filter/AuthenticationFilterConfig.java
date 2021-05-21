@@ -206,19 +206,21 @@ public class AuthenticationFilterConfig {
 			}
 
 			HttpResponse httpResponse = authentication(exchange);
-			if (httpResponse != null && httpResponse.getStatus() == HttpStatus.OK.value()) {
-				String xAuthTokenHeader = xAuthTokenHeader(exchange);
-				String authorizationHeader = authorizationHeader(exchange);
-				request = exchange.getRequest().mutate().headers(httpHeaders -> {
-					httpHeaders.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-					httpHeaders.add(AUTHORIZATION_HEADER, authorizationHeader);
-					httpHeaders.add(REQUEST_ID_HEADER, httpResponse.header(REQUEST_ID_HEADER));
-					httpHeaders.add(TRACE_NO_HEADER, httpResponse.header(TRACE_NO_HEADER));
-				}).build();
-				return chain.filter(exchange.mutate().request(request).build());
-			} else {
+			if (httpResponse == null) {
+				return serviceUnavailable(exchange);
+			}
+			if (httpResponse.getStatus() != HttpStatus.OK.value()) {
 				return invalidToken(exchange);
 			}
+			String xAuthTokenHeader = xAuthTokenHeader(exchange);
+			String authorizationHeader = authorizationHeader(exchange);
+			request = exchange.getRequest().mutate().headers(httpHeaders -> {
+				httpHeaders.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+				httpHeaders.add(AUTHORIZATION_HEADER, authorizationHeader);
+				httpHeaders.add(REQUEST_ID_HEADER, httpResponse.header(REQUEST_ID_HEADER));
+				httpHeaders.add(TRACE_NO_HEADER, httpResponse.header(TRACE_NO_HEADER));
+			}).build();
+			return chain.filter(exchange.mutate().request(request).build());
 		}
 
 		/**
@@ -288,6 +290,22 @@ public class AuthenticationFilterConfig {
 				flag = true;
 			}
 			return flag;
+		}
+
+		/**
+		 * 鉴权网关无响应
+		 * 
+		 * @param exchange
+		 *            ServerWebExchange
+		 * @return 鉴权网关无响应
+		 */
+		private Mono<Void> serviceUnavailable(ServerWebExchange exchange) {
+			ServerHttpResponse response = exchange.getResponse();
+			response.setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+			Response<Void> r = Response.fail(HttpStatus.SERVICE_UNAVAILABLE.value(),
+					HttpStatus.SERVICE_UNAVAILABLE.name().toLowerCase());
+			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
 
 		/**

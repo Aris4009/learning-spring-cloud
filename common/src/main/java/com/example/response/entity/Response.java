@@ -1,6 +1,7 @@
 package com.example.response.entity;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.http.HttpStatus;
 
@@ -19,6 +20,7 @@ public final class Response<T> {
 
 	private String timestamp;
 
+	@SuppressWarnings("unchecked")
 	public static <T> Response<T> ok(T data, String... msg) {
 		String s = null;
 		if (msg != null && msg.length > 0) {
@@ -31,13 +33,14 @@ public final class Response<T> {
 			s = "success";
 		}
 		return (Response<T>) Response.builder().data(data).message(s).status(HttpStatus.OK.value())
-				.timestamp(LocalDateTime.now().toString()).build();
+				.timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build();
 	}
 
 	public static <T> Response<T> ok(String... msg) {
 		return ok(null, msg);
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> Response<T> fail(T data, int status, String... msg) {
 		String s = null;
 		if (msg != null && msg.length > 0) {
@@ -50,7 +53,7 @@ public final class Response<T> {
 			s = "fail";
 		}
 		return (Response<T>) Response.builder().data(data).message(s).status(status)
-				.timestamp(LocalDateTime.now().toString()).build();
+				.timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build();
 	}
 
 	public static <T> Response<T> fail(int status, String... msg) {

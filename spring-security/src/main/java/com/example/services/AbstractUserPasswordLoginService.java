@@ -7,6 +7,7 @@ import com.example.dao.UserDao;
 import com.example.entity.Role;
 import com.example.entity.User;
 import com.example.entity.UserDetail;
+import com.example.exception.AuthenticationException;
 import com.example.exception.BusinessException;
 import com.example.utils.JwtUtils;
 
@@ -63,7 +64,7 @@ public abstract class AbstractUserPasswordLoginService implements ILoginService 
 	}
 
 	@Override
-	public void logout(String token) throws BusinessException {
+	public void logout(String token) throws AuthenticationException {
 		preLogout();
 		this.jwtUtils.removeSession(token);
 		afterLogout();

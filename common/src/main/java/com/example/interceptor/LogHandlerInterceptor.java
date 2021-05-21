@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -45,14 +44,13 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler) throws Exception {
-		MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
+		if ("/error".equals(httpServletRequest.getRequestURI())) {
+			return true;
+		}
 		try {
+			MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
 			RequestLog requestLog = MyRequestContext.getRequestLog();
 			Map<String, Object> map = MyRequestContext.getRequestContextMap();
-			if ("/error".equals(requestLog.getUrl())) {
-				return true;
-			}
-
 			if (requestLogConfig.isPre()) {
 				log.info("{}", requestLog);
 			}
@@ -80,8 +78,7 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 	@Override
 	public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler, Exception ex) throws Exception {
-		HttpMethod method = HttpMethod.resolve(httpServletRequest.getMethod());
-		if (method != HttpMethod.GET && method != HttpMethod.POST) {
+		if ("/error".equals(httpServletRequest.getRequestURI())) {
 			return;
 		}
 		RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.AFTER, null);

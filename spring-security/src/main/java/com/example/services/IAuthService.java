@@ -1,11 +1,11 @@
 package com.example.services;
 
-import com.example.exception.BusinessException;
+import com.example.exception.AuthenticationException;
 
 public interface IAuthService {
-	public String refresh(String token) throws BusinessException;
+	public String refresh(String token) throws AuthenticationException;
 
-	public void verify(String token) throws BusinessException;
+	public void verify(String token) throws AuthenticationException;
 
-	public void verify(String token, String url) throws BusinessException;
+	public void verify(String token, String url) throws AuthenticationException;
 }

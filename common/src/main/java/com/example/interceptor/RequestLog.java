@@ -77,9 +77,6 @@ public class RequestLog implements Serializable {
 
 	private static final int CAPACITY = 1024;
 
-	private RequestLog() {
-	}
-
 	public static final int BEFORE = 0;
 
 	public static final int AFTER = 1;
@@ -126,10 +123,13 @@ public class RequestLog implements Serializable {
 	/**
 	 * 获取GET/POST方法请求参数
 	 *
-	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method             HttpMethod
+	 * @param httpServletRequest
+	 *            原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method
+	 *            HttpMethod
 	 * @return 返回请求体
-	 * @throws BusinessException 异常
+	 * @throws BusinessException
+	 *             异常
 	 */
 	public static String getParams(HttpServletRequest httpServletRequest, HttpMethod method) throws BusinessException {
 		try {
@@ -150,10 +150,13 @@ public class RequestLog implements Serializable {
 	/**
 	 * 获取POST multipart/form-data中上传的文件信息
 	 *
-	 * @param httpServletRequest 原始请求，没有被HttpServletRequestWrapper包装
-	 * @param method             HttpMethod
+	 * @param httpServletRequest
+	 *            原始请求，没有被HttpServletRequestWrapper包装
+	 * @param method
+	 *            HttpMethod
 	 * @return 返回文件信息（文件名-文件大小的key-value对）
-	 * @throws BusinessException 异常
+	 * @throws BusinessException
+	 *             异常
 	 */
 	public static String getMultipartFilesInfo(HttpServletRequest httpServletRequest, HttpMethod method)
 			throws BusinessException {
@@ -179,7 +182,8 @@ public class RequestLog implements Serializable {
 	/**
 	 * 设置异常
 	 * 
-	 * @param exception 异常信息
+	 * @param exception
+	 *            异常信息
 	 */
 	public void setException(Exception exception) {
 		if (exception == null) {

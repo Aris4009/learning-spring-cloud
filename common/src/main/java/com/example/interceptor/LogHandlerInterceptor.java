@@ -1,7 +1,6 @@
 package com.example.interceptor;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,36 +20,31 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 
 	private final String serviceId;
 
+	private final String errorPath;
+
 	private final RequestLogConfig requestLogConfig;
 
 	private final List<IStoreLog> storeLogList;
 
-	public LogHandlerInterceptor(String serviceId, RequestLogConfig requestLogConfig) {
+	public LogHandlerInterceptor(String serviceId, String errorPath, RequestLogConfig requestLogConfig,
+			List<IStoreLog> storeLogList) {
 		this.serviceId = serviceId;
-		this.requestLogConfig = requestLogConfig;
-		this.storeLogList = null;
-	}
-
-	public LogHandlerInterceptor(String serviceId, RequestLogConfig requestLogConfig, List<IStoreLog> storeLogList) {
-		this.serviceId = serviceId;
+		this.errorPath = errorPath;
 		this.requestLogConfig = requestLogConfig;
 		this.storeLogList = storeLogList;
 	}
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	public static final String REQUEST_LOG_ATTRIBUTE = "requestLog";
-
 	@Override
 	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler) throws Exception {
-		if ("/error".equals(httpServletRequest.getRequestURI())) {
+		if (this.errorPath.equals(httpServletRequest.getRequestURI())) {
 			return true;
 		}
 		try {
 			MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
 			RequestLog requestLog = MyRequestContext.getRequestLog();
-			Map<String, Object> map = MyRequestContext.getRequestContextMap();
 			if (requestLogConfig.isPre()) {
 				log.info("{}", requestLog);
 			}
@@ -78,7 +72,7 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 	@Override
 	public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			Object handler, Exception ex) throws Exception {
-		if ("/error".equals(httpServletRequest.getRequestURI())) {
+		if (this.errorPath.equals(httpServletRequest.getRequestURI())) {
 			return;
 		}
 		RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.AFTER, null);

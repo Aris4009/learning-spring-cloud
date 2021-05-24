@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.Part;
 
+import org.springframework.http.MediaType;
+
 import com.example.json.JSON;
 
 /**
@@ -24,6 +26,8 @@ public class RequestWrapper extends HttpServletRequestWrapper {
 
 	private String multipartFileListBody = null;
 
+	private String contentType = null;
+
 	private static final int BUFF_SIZE = 4096;
 
 	private static final int CAPACITY = 1024;
@@ -31,11 +35,14 @@ public class RequestWrapper extends HttpServletRequestWrapper {
 	/**
 	 * Constructs a request object wrapping the given request.
 	 *
-	 * @param request The request to wrap
-	 * @throws IllegalArgumentException if the request is null
+	 * @param request
+	 *            The request to wrap
+	 * @throws IllegalArgumentException
+	 *             if the request is null
 	 */
 	public RequestWrapper(HttpServletRequest request) {
 		super(request);
+		this.contentType = request.getContentType();
 	}
 
 	public String getRequestBody() {
@@ -110,5 +117,10 @@ public class RequestWrapper extends HttpServletRequestWrapper {
 			this.multipartFileListBody = JSON.toJSONString(list);
 		}
 		return super.getParts();
+	}
+
+	@Override
+	public String getContentType() {
+		return Objects.requireNonNullElse(this.contentType, MediaType.APPLICATION_JSON_VALUE);
 	}
 }

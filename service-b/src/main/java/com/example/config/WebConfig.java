@@ -8,10 +8,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.example.exception.handler.MyHandlerExceptionResolver;
 import com.example.interceptor.IStoreLog;
 import com.example.interceptor.LogHandlerInterceptor;
 import com.example.json.JSON;
@@ -26,9 +28,13 @@ public class WebConfig implements WebMvcConfigurer {
 
 	private final String serviceId;
 
-	public WebConfig(RequestLogConfig requestLogConfig, @Value("${spring.application.name}") String serviceId) {
-		this.serviceId = serviceId;
+	private final String errorPath;
+
+	public WebConfig(RequestLogConfig requestLogConfig, @Value("${spring.application.name}") String serviceId,
+			@Value("${server.error.path:/error}") String errorPath) {
 		this.requestLogConfig = requestLogConfig;
+		this.serviceId = serviceId;
+		this.errorPath = errorPath;
 	}
 
 	@Override
@@ -47,6 +53,11 @@ public class WebConfig implements WebMvcConfigurer {
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		List<IStoreLog> list = new ArrayList<>();
-		registry.addInterceptor(new LogHandlerInterceptor(this.serviceId, this.requestLogConfig, list));
+		registry.addInterceptor(new LogHandlerInterceptor(this.serviceId, this.errorPath, this.requestLogConfig, list));
+	}
+
+	@Override
+	public void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+		resolvers.add(new MyHandlerExceptionResolver());
 	}
 }

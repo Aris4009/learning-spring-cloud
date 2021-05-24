@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.entity.User;
+import com.example.exception.BusinessException;
 import com.example.response.entity.Response;
 
 @RestController
@@ -21,7 +22,7 @@ public class RemoteController {
 	// }
 
 	@PostMapping("/user/list")
-	public Response<List<User>> list(@RequestBody User user) {
-		return Response.ok();
+	public Response<List<User>> list(@RequestBody User user) throws BusinessException {
+		throw BusinessException.paramsMustBeNotEmptyOrNullError("name");
 	}
 }

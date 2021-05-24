@@ -20,6 +20,8 @@ nacos:
 
 server:
   port: 8001
+  error:
+    path: /error
 spring:
   application:
     name: service-a
@@ -27,7 +29,7 @@ spring:
     banner-mode: 'off'
     log-startup-info: true
   redis:
-    enable: true
+    enable: false
     type: 0
     schema: redis
     cluster:
@@ -44,7 +46,7 @@ spring:
     host: 127.0.0.1
     port: 5672
   datasource:
-    enable: true
+    enable: false
     url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
     username: root
     password:

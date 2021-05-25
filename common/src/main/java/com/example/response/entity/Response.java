@@ -60,6 +60,10 @@ public final class Response<T> {
 		return fail(null, status, msg);
 	}
 
+	public static <T> Response<T> fail(String status, String... msg) {
+		return fail(Integer.parseInt(status), msg);
+	}
+
 	public static <T> Response<T> fail(String... msg) {
 		return fail(HttpStatus.INTERNAL_SERVER_ERROR.value(), msg);
 	}

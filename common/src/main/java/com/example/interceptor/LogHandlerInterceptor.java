@@ -7,13 +7,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
-import com.example.exception.BusinessException;
 import com.example.util.MyRequestContext;
 
 public class LogHandlerInterceptor implements HandlerInterceptor {
@@ -42,31 +39,13 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		if (this.errorPath.equals(httpServletRequest.getRequestURI())) {
 			return true;
 		}
-		try {
-			MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
-			RequestLog requestLog = MyRequestContext.getRequestLog();
-			if (requestLogConfig.isPre()) {
-				log.info("{}", requestLog);
-			}
-			StoreLogUtil.storeLog(storeLogList, requestLog);
-			return true;
-		} catch (Exception e) {
-			BusinessException businessException;
-			if (e instanceof HttpMessageNotReadableException) {
-				businessException = new BusinessException("unsupported params type");
-			} else if (e instanceof HttpRequestMethodNotSupportedException) {
-				businessException = new BusinessException("unsupported method");
-			} else {
-				businessException = new BusinessException(e);
-			}
-			RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.ERROR,
-					businessException);
-			if (requestLogConfig.isError()) {
-				log.error("{}", requestLog);
-			}
-			StoreLogUtil.storeLog(storeLogList, requestLog);
-			throw e;
+		MyRequestContext.setBeforeRequestContext(httpServletRequest, httpServletResponse, handler, this.serviceId);
+		RequestLog requestLog = MyRequestContext.getRequestLog();
+		if (requestLogConfig.isPre()) {
+			log.info("{}", requestLog.console());
 		}
+		StoreLogUtil.storeLog(storeLogList, requestLog);
+		return true;
 	}
 
 	@Override
@@ -75,12 +54,13 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 		if (this.errorPath.equals(httpServletRequest.getRequestURI())) {
 			return;
 		}
-		RequestLog requestLog = RequestLog.modify(MyRequestContext.getRequestLog(), RequestLog.AFTER, null);
+		MyRequestContext.setAfterRequestContext();
+		RequestLog requestLog = MyRequestContext.getRequestLog();
 		Exception exception = requestLog.getException();
 		if (requestLogConfig.isError() && exception != null) {
-			log.error("{}", requestLog);
+			log.error("{}", requestLog.console());
 		} else {
-			log.info("{}", requestLog);
+			log.info("{}", requestLog.console());
 		}
 		StoreLogUtil.storeLog(storeLogList, requestLog);
 		RequestContextHolder.resetRequestAttributes();

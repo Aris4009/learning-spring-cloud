@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.method.HandlerMethod;
@@ -20,14 +21,18 @@ import com.example.request.wrapper.RequestWrapper;
 import com.example.request.wrapper.RequestWrapperFacade;
 import com.example.util.MyResolveHttpHeaders;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 请求日志对象
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RequestLog implements Serializable {
 
 	private static final long serialVersionUID = -1032433027159174788L;
@@ -109,14 +114,11 @@ public class RequestLog implements Serializable {
 		return requestLog;
 	}
 
-	public static RequestLog modify(RequestLog beforeRequestLog, int type, Exception e) {
+	public static RequestLog after(RequestLog beforeRequestLog, int type) {
 		LocalDateTime localDateTime = LocalDateTime.now();
 		beforeRequestLog.setTime(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000);
 		beforeRequestLog.setTimeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 		beforeRequestLog.setType(type);
-		if (e != null) {
-			beforeRequestLog.setException(e);
-		}
 		return beforeRequestLog;
 	}
 
@@ -201,5 +203,18 @@ public class RequestLog implements Serializable {
 	@Override
 	public String toString() {
 		return JSON.toJSONString(this);
+	}
+
+	public String console() {
+		try {
+			RequestLog requestLog = new RequestLog();
+			BeanUtils.copyProperties(this, requestLog);
+			if (this.exception != null) {
+				requestLog.setErrorMsg(this.getException().getMessage());
+			}
+			return JSON.toJSONString(requestLog);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

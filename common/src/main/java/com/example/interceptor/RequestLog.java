@@ -202,7 +202,7 @@ public class RequestLog implements Serializable {
 
 	@Override
 	public String toString() {
-		return JSON.toJSONString(this);
+		return JSON.toJSONStringDisableHtmlEscaping(this);
 	}
 
 	public String console() {
@@ -212,7 +212,7 @@ public class RequestLog implements Serializable {
 			if (this.exception != null) {
 				requestLog.setErrorMsg(this.getException().getMessage());
 			}
-			return JSON.toJSONString(requestLog);
+			return JSON.toJSONStringDisableHtmlEscaping(requestLog);
 		} catch (Exception e) {
 			return null;
 		}

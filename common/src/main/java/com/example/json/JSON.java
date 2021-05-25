@@ -26,6 +26,8 @@ public final class JSON {
 
 	public static final Gson gson;
 
+	public static final Gson disableHtmlEscapingGson;
+
 	static {
 		builder = new GsonBuilder();
 		builder.registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
@@ -43,6 +45,7 @@ public final class JSON {
 			}
 		}).serializeNulls();
 		gson = builder.create();
+		disableHtmlEscapingGson = builder.disableHtmlEscaping().create();
 	}
 
 	/**
@@ -53,6 +56,10 @@ public final class JSON {
 	 */
 	public static String toJSONString(Object object) {
 		return gson.toJson(object);
+	}
+
+	public static String toJSONStringDisableHtmlEscaping(Object object) {
+		return disableHtmlEscapingGson.toJson(object);
 	}
 
 	/**

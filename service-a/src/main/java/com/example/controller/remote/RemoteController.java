@@ -9,20 +9,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.entity.User;
 import com.example.exception.BusinessException;
+import com.example.remote.client.IUserServiceClient;
 import com.example.response.entity.Response;
 
 @RestController
 @RequestMapping("/api/v1")
 public class RemoteController {
 
-	// private IUserServiceClient userServiceClient;
-	//
-	// public RemoteController(IUserServiceClient userServiceClient) {
-	// this.userServiceClient = userServiceClient;
-	// }
+	private IUserServiceClient userServiceClient;
+
+	public RemoteController(IUserServiceClient userServiceClient) {
+		this.userServiceClient = userServiceClient;
+	}
 
 	@PostMapping("/user/list")
 	public Response<List<User>> list(@RequestBody User user) throws BusinessException {
-		throw BusinessException.paramsMustBeNotEmptyOrNullError("name");
+		try {
+			return userServiceClient.list(user);
+		} catch (Exception e) {
+			throw new BusinessException(e);
+		}
 	}
 }

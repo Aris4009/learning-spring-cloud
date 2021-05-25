@@ -29,7 +29,7 @@ spring:
     banner-mode: 'off'
     log-startup-info: true
   redis:
-    enable: false
+    enable: true
     type: 0
     schema: redis
     cluster:
@@ -46,7 +46,7 @@ spring:
     host: 127.0.0.1
     port: 5672
   datasource:
-    enable: false
+    enable: true
     url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
     username: root
     password:

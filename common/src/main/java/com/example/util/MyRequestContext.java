@@ -8,11 +8,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.example.exception.BusinessException;
+import com.example.exception.ErrorPathException;
 import com.example.interceptor.RequestLog;
 
 public final class MyRequestContext {
@@ -62,6 +65,18 @@ public final class MyRequestContext {
 		return (RequestLog) map.get(REQUEST_CONTEXT_REQUEST_LOG_KEY);
 	}
 
+	public static RequestLog getRequestLog(HttpServletRequest request, HttpServletResponse response)
+			throws BusinessException {
+		RequestLog requestLog = getRequestLog();
+		if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
+			String msg = request.getRequestURI() + " was not found";
+			request.setAttribute(DefaultErrorAttributes.class.getName() + ".ERROR", new ErrorPathException(msg));
+			requestLog.setType(RequestLog.ERROR);
+			requestLog.setErrorMsg(msg);
+		}
+		return requestLog;
+	}
+
 	@SuppressWarnings("unchecked")
 	public static Map<String, Object> getRequestContextMap() throws BusinessException {
 		RequestAttributes requestAttributes = getRequestContext();
@@ -77,7 +92,7 @@ public final class MyRequestContext {
 		try {
 			getRequestLog().setException(ex);
 		} catch (Exception e) {
-			log.error(e.getMessage(), e);
+			log.debug(e.getMessage(), e);
 		}
 	}
 

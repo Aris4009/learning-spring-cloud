@@ -55,9 +55,8 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			return;
 		}
 		MyRequestContext.setAfterRequestContext();
-		RequestLog requestLog = MyRequestContext.getRequestLog();
-		Exception exception = requestLog.getException();
-		if (requestLogConfig.isError() && exception != null) {
+		RequestLog requestLog = MyRequestContext.getRequestLog(httpServletRequest, httpServletResponse);
+		if (requestLogConfig.isError() && requestLog.getType() == RequestLog.ERROR) {
 			log.error("{}", requestLog.console());
 		} else {
 			log.info("{}", requestLog.console());

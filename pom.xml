@@ -39,6 +39,7 @@
         <beetlsql.version.2>1.2.38.RELEASE</beetlsql.version.2>
         <reactor.version>2020.0.6</reactor.version>
         <jwt.version>0.11.2</jwt.version>
+        <caffeine.version>3.0.2</caffeine.version>
     </properties>
 
     <dependencyManagement>
@@ -140,6 +141,11 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-gson</artifactId>
                 <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

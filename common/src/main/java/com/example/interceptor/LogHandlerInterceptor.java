@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.example.config.RequestLogConfig;
@@ -62,6 +61,6 @@ public class LogHandlerInterceptor implements HandlerInterceptor {
 			log.info("{}", requestLog.console());
 		}
 		StoreLogUtil.storeLog(storeLogList, requestLog);
-		RequestContextHolder.resetRequestAttributes();
+		MyRequestContext.clear();
 	}
 }

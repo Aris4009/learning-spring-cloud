@@ -53,6 +53,11 @@ spring:
     beetlsql:
       worker.id: 1
       data.center.id: 1
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 300
+
 
 feign:
   client:
@@ -69,3 +74,5 @@ feign:
     response:
       enabled: true
       useGzipDecoder: true
+  okhttp:
+    enabled: true

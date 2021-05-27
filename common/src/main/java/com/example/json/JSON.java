@@ -1,5 +1,6 @@
 package com.example.json;
 
+import java.io.Reader;
 import java.lang.reflect.Type;
 
 import com.google.gson.*;
@@ -117,6 +118,18 @@ public final class JSON {
 	 */
 	public static <T> T parse(String json, TypeToken<T> typeToken) {
 		return gson.fromJson(json, typeToken.getType());
+	}
+
+	/**
+	 * json流转对象
+	 * 
+	 * @param reader
+	 * @param typeOfT
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> T parse(Reader reader, Type typeOfT) {
+		return gson.fromJson(reader, typeOfT);
 	}
 
 	/**

@@ -2,6 +2,8 @@ package com.example.controller.remote;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,11 +25,7 @@ public class RemoteController {
 	}
 
 	@PostMapping("/user/list")
-	public Response<List<User>> list(@RequestBody User user) throws BusinessException {
-		try {
-			return userServiceClient.list(user);
-		} catch (Exception e) {
-			throw new BusinessException(e);
-		}
+	public Response<List<User>> list(@RequestBody User user, HttpServletRequest request) throws BusinessException {
+		return userServiceClient.list(user);
 	}
 }

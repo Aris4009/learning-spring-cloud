@@ -40,7 +40,7 @@ public final class MyRequestContext {
 		Map<String, Object> map = new HashMap<>(myResolveHttpHeaders.getHeaders());
 		map.put(REQUEST_CONTEXT_REQUEST_LOG_KEY, requestLog);
 		requestAttributes.setAttribute(REQUEST_CONTEXT_KEY, map, REQUEST_CONTEXT_SCOPE);
-		RequestContextHolder.setRequestAttributes(requestAttributes);
+		RequestContextHolder.setRequestAttributes(requestAttributes, true);
 		response.setHeader(MyHttpHeaders.SERVICE_ID_HEADER, myResolveHttpHeaders.getServiceId());
 		response.setHeader(MyHttpHeaders.REQUEST_ID_HEADER, myResolveHttpHeaders.getRequestId());
 		response.setHeader(MyHttpHeaders.TRACE_NO_HEADER, myResolveHttpHeaders.getTraceNo());

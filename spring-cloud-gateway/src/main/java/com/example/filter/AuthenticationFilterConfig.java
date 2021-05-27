@@ -1,7 +1,7 @@
 package com.example.filter;
 
-import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +21,13 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 
 import cn.hutool.core.io.resource.ClassPathResource;
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import reactor.core.publisher.Mono;
 
 /**
@@ -33,6 +36,10 @@ import reactor.core.publisher.Mono;
 @Configuration
 @ConditionalOnProperty(name = "spring.cloud.gateway.security.enable", havingValue = "true")
 public class AuthenticationFilterConfig {
+
+	private static final int BUFFER_SIZE = 4096;
+
+	private static final int CAPACITY = 4096;
 
 	/**
 	 * 白名单
@@ -73,22 +80,29 @@ public class AuthenticationFilterConfig {
 		return new AuthenticationUrl(authenticateUrl, verifyUrl, refreshUrl, loginUrl, logoutUrl);
 	}
 
+	@Bean
+	public OkHttpClient httpClient(
+			@Value("${spring.cloud.gateway.security.http-client.connection-timeout-second}") long connectionTimeout,
+			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") long readTimeout) {
+		return new OkHttpClient().newBuilder().connectTimeout(connectionTimeout, TimeUnit.SECONDS)
+				.readTimeout(readTimeout, TimeUnit.SECONDS).build();
+	}
+
 	/**
 	 * 全局认证过滤器
 	 * 
+	 * @param httpClient
+	 *            httpClient
 	 * @param whiteUrlList
 	 *            白名单
 	 * @param authenticationUrl
 	 *            认证url
-	 * @param stripPrefix
-	 *            剥离前缀
 	 * @return 全局认证过滤器
 	 */
-	@Bean
-	public GlobalFilter authenticationFilter(@Autowired List<WhiteUrl> whiteUrlList,
-			@Autowired AuthenticationUrl authenticationUrl,
-			@Value("${spring.cloud.gateway.default-filters[0]:StripPrefix=1}") String stripPrefix) {
-		return new AuthenticationFilter(whiteUrlList, authenticationUrl);
+	@Bean(destroyMethod = "destroy")
+	public AuthenticationFilter authenticationFilter(@Autowired OkHttpClient httpClient,
+			@Autowired List<WhiteUrl> whiteUrlList, @Autowired AuthenticationUrl authenticationUrl) {
+		return new AuthenticationFilter(httpClient, whiteUrlList, authenticationUrl);
 	}
 
 	static class WhiteUrl {
@@ -158,6 +172,8 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
+		private final OkHttpClient httpClient;
+
 		private final List<WhiteUrl> whiteUrlList;
 
 		private final AuthenticationUrl authenticationUrl;
@@ -174,20 +190,18 @@ public class AuthenticationFilterConfig {
 
 		private static final String TRACE_NO_HEADER = "traceNo";
 
-		private static final String INVALID_TOKEN = "invalid token";
+		private static final String DEFAULT_TRACE_NO = "0";
 
-		private static final int HTTP_TIME_OUT = 5000;
+		private static final String INVALID_TOKEN = "invalid token";
 
 		public static final int INVALID_TOKEN_STATUS = 4001;
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(List<WhiteUrl> whiteUrlList, AuthenticationUrl authenticationUrl) {
-			if (whiteUrlList == null) {
-				this.whiteUrlList = new ArrayList<>();
-			} else {
-				this.whiteUrlList = whiteUrlList;
-			}
+		public AuthenticationFilter(OkHttpClient httpClient, List<WhiteUrl> whiteUrlList,
+				AuthenticationUrl authenticationUrl) {
+			this.httpClient = httpClient;
+			this.whiteUrlList = Objects.requireNonNullElseGet(whiteUrlList, ArrayList::new);
 			this.authenticationUrl = authenticationUrl;
 		}
 
@@ -207,21 +221,13 @@ public class AuthenticationFilterConfig {
 				return invalidToken(exchange);
 			}
 
-			HttpResponse httpResponse = authentication(exchange);
+			com.example.response.entity.Response<Void> httpResponse = authentication(exchange);
 			if (httpResponse == null) {
 				return serviceUnavailable(exchange);
 			}
 			if (httpResponse.getStatus() != HttpStatus.OK.value()) {
 				return invalidToken(exchange);
 			}
-			String xAuthTokenHeader = xAuthTokenHeader(exchange);
-			String authorizationHeader = authorizationHeader(exchange);
-			request = exchange.getRequest().mutate().headers(httpHeaders -> {
-				httpHeaders.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-				httpHeaders.add(AUTHORIZATION_HEADER, authorizationHeader);
-				httpHeaders.add(REQUEST_ID_HEADER, httpResponse.header(REQUEST_ID_HEADER));
-				httpHeaders.add(TRACE_NO_HEADER, httpResponse.header(TRACE_NO_HEADER));
-			}).build();
 			return chain.filter(exchange.mutate().request(request).build());
 		}
 
@@ -285,12 +291,8 @@ public class AuthenticationFilterConfig {
 		 * @return true:两个请求头至少缺少一个 false:两个请求头都包含
 		 */
 		private boolean checkHeaders(ServerWebExchange exchange) {
-			boolean flag = false;
-			ServerHttpRequest request = exchange.getRequest();
-			if (StrUtil.isBlankIfStr(xAuthTokenHeader(exchange))
-					|| StrUtil.isBlankIfStr(authorizationHeader(exchange))) {
-				flag = true;
-			}
+			boolean flag = StrUtil.isBlankIfStr(xAuthTokenHeader(exchange))
+					|| StrUtil.isBlankIfStr(authorizationHeader(exchange));
 			return flag;
 		}
 
@@ -304,7 +306,8 @@ public class AuthenticationFilterConfig {
 		private Mono<Void> serviceUnavailable(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-			Response<Void> r = Response.fail(HttpStatus.SERVICE_UNAVAILABLE.value(),
+			com.example.response.entity.Response<Void> r = com.example.response.entity.Response.fail(
+					HttpStatus.SERVICE_UNAVAILABLE.value(),
 					HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase().toLowerCase());
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
@@ -319,7 +322,8 @@ public class AuthenticationFilterConfig {
 		private Mono<Void> invalidToken(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-			Response<Void> r = Response.fail(INVALID_TOKEN_STATUS, INVALID_TOKEN);
+			com.example.response.entity.Response<Void> r = com.example.response.entity.Response
+					.fail(INVALID_TOKEN_STATUS, INVALID_TOKEN);
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
 
@@ -354,8 +358,8 @@ public class AuthenticationFilterConfig {
 		 *            ServerWebExchange
 		 * @return 请求结果
 		 */
-		private HttpResponse authentication(ServerWebExchange exchange) {
-			HttpResponse httpResponse = null;
+		private com.example.response.entity.Response<Void> authentication(ServerWebExchange exchange) {
+			com.example.response.entity.Response<Void> response = null;
 			try {
 				ServerHttpRequest request = exchange.getRequest();
 				String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
@@ -363,14 +367,26 @@ public class AuthenticationFilterConfig {
 				String authorizationHeader = authorizationHeader(exchange);
 				Map<String, String> authParam = new HashMap<>();
 				authParam.put("url", exchange.getRequest().getURI().getRawPath());
-				httpResponse = HttpRequest.post(this.authenticationUrl.getAuthenticateUrl())
-						.header(HEADER_X_AUTH_TOKEN, xAuthTokenHeader).header(AUTHORIZATION_HEADER, authorizationHeader)
-						.header(REQUEST_ID_HEADER, requestId).header(TRACE_NO_HEADER, "0").timeout(HTTP_TIME_OUT)
-						.body(JSONUtil.toJsonStr(authParam)).execute();
+
+				RequestBody securityRequestBody = RequestBody.create(JSONUtil.toJsonStr(authParam),
+						okhttp3.MediaType.get(MediaType.APPLICATION_JSON_VALUE));
+				Request securityRequest = new Request.Builder().url(this.authenticationUrl.getAuthenticateUrl())
+						.addHeader(HEADER_X_AUTH_TOKEN, xAuthTokenHeader)
+						.addHeader(AUTHORIZATION_HEADER, authorizationHeader).addHeader(REQUEST_ID_HEADER, requestId)
+						.addHeader(TRACE_NO_HEADER, DEFAULT_TRACE_NO).post(securityRequestBody).build();
+				try (Response securityResponse = this.httpClient.newCall(securityRequest).execute()) {
+					response = JSONUtil.toBean(securityResponse.body().toString(),
+							new TypeReference<com.example.response.entity.Response<Void>>() {
+							}, false);
+					request.getHeaders().add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+					request.getHeaders().add(AUTHORIZATION_HEADER, authorizationHeader);
+					request.getHeaders().add(REQUEST_ID_HEADER, securityRequest.header(REQUEST_ID_HEADER));
+					request.getHeaders().add(TRACE_NO_HEADER, securityResponse.header(TRACE_NO_HEADER));
+				}
 			} catch (Exception e) {
 				log.debug(e.getMessage(), e);
 			}
-			return httpResponse;
+			return response;
 		}
 
 		@Override
@@ -378,80 +394,10 @@ public class AuthenticationFilterConfig {
 			return ORDERED;
 		}
 
-		public static class Response<T> {
-
-			private T data;
-
-			private String path;
-
-			private String message;
-
-			private int status;
-
-			private String timestamp;
-
-			public T getData() {
-				return data;
-			}
-
-			public void setData(T data) {
-				this.data = data;
-			}
-
-			public String getPath() {
-				return path;
-			}
-
-			public void setPath(String path) {
-				this.path = path;
-			}
-
-			public String getMessage() {
-				return message;
-			}
-
-			public void setMessage(String message) {
-				this.message = message;
-			}
-
-			public int getStatus() {
-				return status;
-			}
-
-			public void setStatus(int status) {
-				this.status = status;
-			}
-
-			public String getTimestamp() {
-				return timestamp;
-			}
-
-			public void setTimestamp(String timestamp) {
-				this.timestamp = timestamp;
-			}
-
-			@SuppressWarnings({"unchecked", "rawtypes"})
-			public static <T> Response<T> fail(T data, int status, String... msg) {
-				String s;
-				if (!StrUtil.isEmptyIfStr(msg)) {
-					StringBuilder builder = new StringBuilder();
-					for (String m : msg) {
-						builder.append(m);
-					}
-					s = builder.toString();
-				} else {
-					s = "fail";
-				}
-				Response response = new Response();
-				response.setData(data);
-				response.setMessage(s);
-				response.setStatus(status);
-				response.setTimestamp(LocalDateTime.now().toString());
-				return (Response<T>) response;
-			}
-
-			public static Response<Void> fail(int status, String... msg) {
-				return fail(null, status, msg);
+		public void destroy() {
+			if (this.httpClient != null) {
+				this.httpClient.dispatcher().executorService().shutdown();
+				this.httpClient.connectionPool().evictAll();
 			}
 		}
 	}

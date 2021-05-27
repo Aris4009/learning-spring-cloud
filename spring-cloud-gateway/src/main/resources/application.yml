@@ -34,6 +34,9 @@ spring:
         login-url: http://localhost:8003/api/v1/login
         logout-url: http://localhost:8003/api/v1/logout
         white-url-list-path: white-url-list.json
+        http-client:
+          connection-timeout-second: 5
+          read-time-second: 5
       enabled: true
       default-filters:
         - StripPrefix=1

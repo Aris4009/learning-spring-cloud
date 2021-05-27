@@ -40,6 +40,7 @@
         <reactor.version>2020.0.6</reactor.version>
         <jwt.version>0.11.2</jwt.version>
         <caffeine.version>3.0.2</caffeine.version>
+        <okhttp.version>4.9.0</okhttp.version>
     </properties>
 
     <dependencyManagement>
@@ -87,6 +88,16 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-json</artifactId>
+                <version>${hutool.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
@@ -146,6 +157,11 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

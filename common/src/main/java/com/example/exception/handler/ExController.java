@@ -25,9 +25,4 @@ public class ExController implements ErrorController {
 		MyRequestContext.setRequestContextException(ex);
 		return ResponseEntity.ok(ExResponse.ex(ex));
 	}
-
-	@Override
-	public String getErrorPath() {
-		return null;
-	}
 }

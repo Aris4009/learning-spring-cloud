@@ -7,9 +7,9 @@ import org.springframework.context.annotation.PropertySource;
 import lombok.Data;
 
 @Configuration
-@PropertySource(value = "classpath:git.properties")
+@PropertySource(value = "classpath:git.properties", ignoreResourceNotFound = true)
 @Data
 public class GitInfoConfig {
-	@Value("${git.commit.id}")
+	@Value("${git.commit.id:null}")
 	private String commitId;
 }

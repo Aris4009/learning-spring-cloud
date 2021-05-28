@@ -42,7 +42,7 @@
         <jwt.version>0.11.2</jwt.version>
         <caffeine.version>3.0.2</caffeine.version>
         <okhttp.version>4.9.0</okhttp.version>
-        <spring.boot.maven.plugin.version>2.4.5</spring.boot.maven.plugin.version>
+        <spring.boot.maven.plugin.version>2.4.6</spring.boot.maven.plugin.version>
         <git.commit.version>2.2.1</git.commit.version>
     </properties>
 

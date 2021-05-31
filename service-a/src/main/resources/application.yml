@@ -12,12 +12,6 @@ management:
       show-components: always
       show-details: always
 
-nacos:
-  config:
-    server-addr: test.nacos.com
-  discovery:
-    server-addr: test.nacos.com
-
 server:
   port: 8001
   error:
@@ -76,3 +70,11 @@ feign:
       useGzipDecoder: true
   okhttp:
     enabled: true
+
+logging:
+  config: http://test.nacos.com:80/nacos/v1/cs/configs?tenant=46fcb891-bd0e-40eb-a5ab-98414c1f5b40&dataId=logback.xml&group=dev
+
+request:
+  pre: true
+  after: true
+  error: true

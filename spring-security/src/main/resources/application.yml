@@ -55,6 +55,11 @@ spring:
       worker.id: 1
       data.center.id: 1
 
+request:
+  pre: true
+  after: true
+  error: true
+
 jwt:
   key: test
   iss: com.example

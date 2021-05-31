@@ -42,7 +42,6 @@
         <jwt.version>0.11.2</jwt.version>
         <caffeine.version>3.0.2</caffeine.version>
         <okhttp.version>4.9.0</okhttp.version>
-        <spring.boot.maven.plugin.version>2.4.6</spring.boot.maven.plugin.version>
         <git.commit.version>2.2.1</git.commit.version>
     </properties>
 
@@ -168,4 +167,48 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>pl.project13.maven</groupId>
+                    <artifactId>git-commit-id-plugin</artifactId>
+                    <version>${git.commit.version}</version>
+                    <executions>
+                        <execution>
+                            <id>get-the-git-infos</id>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                            <phase>initialize</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <includeOnlyProperties>
+                            <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.user.name</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.time</includeOnlyProperty>
+                            <includeOnlyProperty>git.commit.message.full</includeOnlyProperty>
+                        </includeOnlyProperties>
+                        <dateFormat>yyyy-MM-dd HH:mm:ss</dateFormat>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

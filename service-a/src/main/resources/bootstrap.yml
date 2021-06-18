@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: service-a
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        server-addr: test.nacos.com:80
+        namespace: 134724eb-437b-4492-a287-8494076f2d57
+        group: DEFAULT_GROUP
+        file-extension: yaml
+logging:
+  config: http://test.nacos.com:80/nacos/v1/cs/configs?tenant=134724eb-437b-4492-a287-8494076f2d57&group=DEFAULT_GROUP&dataId=service-a-logback.xml

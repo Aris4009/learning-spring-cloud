@@ -13,33 +13,29 @@ management:
       show-details: always
 
 server:
-  port: 8003
+  port: 8001
   error:
     path: /error
 spring:
   application:
-    name: spring-security
+    name: service-a
   main:
     banner-mode: 'off'
     log-startup-info: true
-  security:
-    cors:
-      allowed-origins: '*'
-      allowed-methods: get,post
-      path-pattern: /api/**
   redis:
     enable: true
     type: 0
     schema: redis
-    cluster:
-      nodes: >-
-        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
     database: 0
     host: 127.0.0.1
     port: 6379
   session:
     store-type: redis
     timeout: 30m
+  rabbitmq:
+    enable: false
+    host: 127.0.0.1
+    port: 5672
   datasource:
     enable: true
     url: jdbc:mysql://127.0.0.1:3306/security?useSSL=false
@@ -48,17 +44,31 @@ spring:
     beetlsql:
       worker.id: 1
       data.center.id: 1
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 300
+
+
+feign:
+  client:
+    config:
+      default:
+        loggerLevel: basic
+        requestInterceptors:
+          - com.example.remote.config.MyRequestInterceptor
+  circuitbreaker:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+      useGzipDecoder: true
+  okhttp:
+    enabled: true
 
 request:
   pre: true
   after: true
   error: true
-
-jwt:
-  key: test
-  iss: com.example
-  expire-second: 3600
-  after-expire-second: 600
-  session:
-    verify: true
-    key: session

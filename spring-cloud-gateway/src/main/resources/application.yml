@@ -11,19 +11,28 @@ management:
     health:
       show-components: always
       show-details: always
-nacos:
-  config:
-    server-addr: test.nacos.com
-  discovery:
-    server-addr: test.nacos.com
+
 server:
+  port: 8000
   error:
     whitelabel:
       enabled: false
-  port: 8000
 spring:
   application:
     name: gateway
+  main:
+    banner-mode: 'off'
+    log-startup-info: true
+  redis:
+    enable: true
+    type: 0
+    schema: redis
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    cluster:
+      nodes: >-
+        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
   cloud:
     gateway:
       security:
@@ -112,18 +121,6 @@ spring:
                 redis-rate-limiter.replenishRate: 1
                 redis-rate-limiter.burstCapacity: 60
                 redis-rate-limiter.requestedTokens: 60
-  main:
-    banner-mode: 'off'
-  redis:
-    enable: true
-    type: 0
-    schema: redis
-    host: 127.0.0.1
-    port: 6379
-    database: 0
-    cluster:
-      nodes: >-
-        10.0.4.110:6371,10.0.4.110:6372,10.0.4.110:6373,10.0.4.111:6371,10.0.4.111:6372,10.0.4.111:6373
 
 #https://blog.csdn.net/weixin_38405253/article/details/108891772
 #https://github.com/lmhmhl/Resilience4j-Guides-Chinese/blob/main/core-modules/CircuitBreaker.md

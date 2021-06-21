@@ -1,6 +1,6 @@
 spring:
   application:
-    name: service-a
+    name: gateway
   cloud:
     nacos:
       discovery:
@@ -15,4 +15,4 @@ spring:
         group: DEFAULT_GROUP
         file-extension: yaml
 logging:
-  config: http://test.nacos.com:80/nacos/v1/cs/configs?tenant=learning-spring-cloud-dev&group=DEFAULT_GROUP&dataId=service-a-logback.xml
+  config: http://test.nacos.com:80/nacos/v1/cs/configs?tenant=learning-spring-cloud-dev&group=DEFAULT_GROUP&dataId=gateway-logback.xml

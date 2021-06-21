@@ -29,19 +29,20 @@
         <hikari.version>4.0.1</hikari.version>
         <lombok.version>1.18.18</lombok.version>
         <hutool.version>5.7.1</hutool.version>
-        <spring.boot.version>2.5.1</spring.boot.version>
+        <spring.boot.version>2.5.0</spring.boot.version>
         <spring.cloud.version>2020.0.3</spring.cloud.version>
         <spring.session.version>2021.0.0</spring.session.version>
         <redisson.version>3.15.5</redisson.version>
         <lettuce.version>6.1.0.RELEASE</lettuce.version>
         <beetlsql.version>3.4.3-RELEASE</beetlsql.version>
-        <spring.data.redis.reactive.version>2.5.1</spring.data.redis.reactive.version>
+        <spring.data.redis.reactive.version>2.5.0</spring.data.redis.reactive.version>
         <reactor.version>2020.0.6</reactor.version>
         <jwt.version>0.11.2</jwt.version>
         <caffeine.version>3.0.2</caffeine.version>
         <okhttp.version>4.9.0</okhttp.version>
         <git.commit.version>2.2.1</git.commit.version>
         <spring.cloud.alibaba.version>2021.1</spring.cloud.alibaba.version>
+        <nacos.client.version>1.4.2</nacos.client.version>
     </properties>
 
     <dependencyManagement>
@@ -152,9 +153,20 @@
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.alibaba.nacos</groupId>
+                        <artifactId>nacos-client</artifactId>
+                    </exclusion>
+                </exclusions>
                 <version>${spring.cloud.alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>${nacos.client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

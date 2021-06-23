@@ -49,7 +49,6 @@ spring:
       cache:
         ttl: 300
 
-
 feign:
   client:
     config:
@@ -72,3 +71,11 @@ request:
   pre: true
   after: true
   error: true
+
+remote-url:
+  internal:
+    #file/server
+    type: file
+    path: remote-url.json
+
+

@@ -19,6 +19,7 @@ import com.example.exception.BusinessException;
 import com.example.json.JSON;
 import com.example.request.wrapper.RequestWrapper;
 import com.example.request.wrapper.RequestWrapperFacade;
+import com.example.store.log.ILog;
 import com.example.util.MyResolveHttpHeaders;
 
 import lombok.AllArgsConstructor;
@@ -33,7 +34,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestLog implements Serializable {
+public class RequestLog implements Serializable, ILog {
 
 	private static final long serialVersionUID = -1032433027159174788L;
 
@@ -48,6 +49,9 @@ public class RequestLog implements Serializable {
 
 	// 时间-字符串表示
 	private String timeStr;
+
+	// 耗时
+	private long cost;
 
 	// 请求id
 	private String requestId;
@@ -77,6 +81,9 @@ public class RequestLog implements Serializable {
 	private int type;
 
 	private String errorMsg;
+
+	// 备注
+	private String comment;
 
 	private transient Object handler;
 
@@ -115,10 +122,13 @@ public class RequestLog implements Serializable {
 	}
 
 	public static RequestLog after(RequestLog beforeRequestLog, int type) {
+		long before = beforeRequestLog.getTime();
 		LocalDateTime localDateTime = LocalDateTime.now();
-		beforeRequestLog.setTime(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000);
+		long after = localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
+		beforeRequestLog.setTime(after / 1000);
 		beforeRequestLog.setTimeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 		beforeRequestLog.setType(type);
+		beforeRequestLog.setCost(after - before);
 		return beforeRequestLog;
 	}
 

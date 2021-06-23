@@ -9,7 +9,7 @@ spring:
         namespace: learning-spring-cloud-dev
         group: DEFAULT_GROUP
       config:
-        enabled: true
+        enabled: false
         server-addr: test.nacos.com:80
         namespace: learning-spring-cloud-dev
         group: DEFAULT_GROUP

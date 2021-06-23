@@ -2,6 +2,7 @@ package com.example.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -98,5 +99,35 @@ public final class MyRequestContext {
 
 	public static void clear() {
 		RequestContextHolder.resetRequestAttributes();
+	}
+
+	public static String getRequestId() throws BusinessException {
+		Map<String, Object> requestAttributes = MyRequestContext.getRequestContextMap();
+		return Objects.toString(requestAttributes.get(MyHttpHeaders.REQUEST_ID_HEADER), null);
+	}
+
+	public static String getTraceNoStr() throws BusinessException {
+		Map<String, Object> requestAttributes = MyRequestContext.getRequestContextMap();
+		return Objects.toString(requestAttributes.get(MyHttpHeaders.TRACE_NO_HEADER), null);
+	}
+
+	public static int getTraceNo() throws BusinessException {
+		Map<String, Object> requestAttributes = MyRequestContext.getRequestContextMap();
+		Object obj = requestAttributes.get(MyHttpHeaders.TRACE_NO_HEADER);
+		if (obj == null) {
+			return 0;
+		} else {
+			return Integer.parseInt(obj.toString());
+		}
+	}
+
+	public static String getXAuthToken() throws BusinessException {
+		Map<String, Object> requestAttributes = MyRequestContext.getRequestContextMap();
+		return Objects.toString(requestAttributes.get(MyHttpHeaders.X_AUTH_TOKEN_HEADER), null);
+	}
+
+	public static String getAuthorization() throws BusinessException {
+		Map<String, Object> requestAttributes = MyRequestContext.getRequestContextMap();
+		return Objects.toString(requestAttributes.get(MyHttpHeaders.AUTHORIZATION_HEADER), null);
 	}
 }

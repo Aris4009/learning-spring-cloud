@@ -14,9 +14,9 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.example.exception.handler.MyHandlerExceptionResolver;
-import com.example.interceptor.IStoreLog;
 import com.example.interceptor.LogHandlerInterceptor;
 import com.example.json.JSON;
+import com.example.store.log.IStoreLog;
 
 /**
  * web配置

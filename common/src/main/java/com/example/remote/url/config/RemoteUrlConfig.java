@@ -74,9 +74,6 @@ public class RemoteUrlConfig {
 		if (type.equalsIgnoreCase(FILE_TYPE)) {
 			try {
 				ClassPathResource classPathResource = new ClassPathResource(path);
-				log.info(path);
-				log.info(classPathResource.getPath());
-				log.info(String.valueOf(classPathResource.exists()));
 				File file = classPathResource.getFile();
 				if (!file.exists()) {
 					throw new BusinessException("can't find remote url config,type:" + type + ",path:" + path);

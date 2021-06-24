@@ -2,13 +2,14 @@ package com.example.controller.config;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.remote.url.config.RemoteUrlConfig;
+import com.example.remote.config.IRemoteConfig;
 import com.example.response.entity.Response;
 
 @RestController
@@ -19,9 +20,9 @@ public class ConfigController {
 	@Value("${spring.datasource.url}")
 	private String url;
 
-	private final RemoteUrlConfig remoteUrlConfig;
+	private final IRemoteConfig remoteUrlConfig;
 
-	public ConfigController(RemoteUrlConfig remoteUrlConfig) {
+	public ConfigController(@Qualifier("remoteUrlConfig") IRemoteConfig remoteUrlConfig) {
 		this.remoteUrlConfig = remoteUrlConfig;
 	}
 
@@ -31,7 +32,7 @@ public class ConfigController {
 	}
 
 	@GetMapping("/get/remote/url")
-	public Response<Map<String, String>> getRemoteUrl() {
-		return Response.ok(remoteUrlConfig.getConfig());
+	public Response<Map<String, Object>> getRemoteUrl() {
+		return Response.ok(remoteUrlConfig.get());
 	}
 }

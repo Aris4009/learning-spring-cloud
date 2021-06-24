@@ -28,7 +28,7 @@
         <mysql.version>8.0.22</mysql.version>
         <hikari.version>4.0.1</hikari.version>
         <lombok.version>1.18.18</lombok.version>
-        <hutool.version>5.7.1</hutool.version>
+        <hutool.version>5.7.2</hutool.version>
         <spring.boot.version>2.5.0</spring.boot.version>
         <spring.cloud.version>2020.0.3</spring.cloud.version>
         <spring.session.version>2021.0.0</spring.session.version>
@@ -83,18 +83,15 @@
             </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
-                <artifactId>hutool-core</artifactId>
-                <version>${hutool.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.hutool</groupId>
-                <artifactId>hutool-json</artifactId>
-                <version>${hutool.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-bom</artifactId>
+                <version>${hutool.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.session</groupId>
@@ -189,7 +186,8 @@
                     </executions>
                     <configuration>
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
+                        </generateGitPropertiesFilename>
                         <includeOnlyProperties>
                             <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
                             <includeOnlyProperty>git.commit.user.name</includeOnlyProperty>

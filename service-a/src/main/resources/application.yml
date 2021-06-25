@@ -75,7 +75,11 @@ request:
 remote-url:
   internal:
     #file/server
-    type: file
-    path: remote-url.json
+    type: server
+    serverAddr: http://test.nacos.com:80
+    namespace: learning-spring-cloud-dev
+    dataId: service-a-remote-url.json
+    group: DEFAULT_GROUP
+    path:
 
 

@@ -26,7 +26,7 @@ import cn.hutool.core.io.resource.ClassPathResource;
 
 public class RemoteConfigImpl implements IRemoteConfig {
 
-	private RemoteConfigPro remoteConfigPro;
+	private final RemoteConfigPro remoteConfigPro;
 
 	private final Map<String, Object> cache = new ConcurrentHashMap<>();
 
@@ -108,7 +108,12 @@ public class RemoteConfigImpl implements IRemoteConfig {
 	}
 
 	@Override
-	public Map<String, Object> get() {
+	public Object get(String key) {
+		return this.cache.get(key);
+	}
+
+	@Override
+	public Map<String, Object> getAll() {
 		return Collections.unmodifiableMap(this.cache);
 	}
 

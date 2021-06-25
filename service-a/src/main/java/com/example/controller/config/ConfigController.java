@@ -33,6 +33,6 @@ public class ConfigController {
 
 	@GetMapping("/get/remote/url")
 	public Response<Map<String, Object>> getRemoteUrl() {
-		return Response.ok(remoteUrlConfig.get());
+		return Response.ok(remoteUrlConfig.getAll());
 	}
 }

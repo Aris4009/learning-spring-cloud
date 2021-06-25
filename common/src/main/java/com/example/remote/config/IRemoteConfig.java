@@ -9,5 +9,7 @@ public interface IRemoteConfig {
 
 	public void destroy();
 
-	public Map<String, Object> get();
+	public Object get(String key);
+
+	public Map<String, Object> getAll();
 }

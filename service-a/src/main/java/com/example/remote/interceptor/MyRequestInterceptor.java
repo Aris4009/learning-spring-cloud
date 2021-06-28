@@ -1,4 +1,4 @@
-package com.example.remote.config;
+package com.example.remote.interceptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

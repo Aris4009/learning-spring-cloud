@@ -7,6 +7,7 @@ import javax.servlet.ServletException;
 
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.client.ResourceAccessException;
 
 import com.example.exception.AuthenticationException;
 import com.example.exception.BusinessException;
@@ -38,6 +39,10 @@ public final class ExResponse {
 
 		if (ex instanceof AuthenticationException) {
 			return authenticationError(ex);
+		}
+
+		if (ex instanceof ResourceAccessException) {
+			return internalError("can't access resource");
 		}
 
 		if (ex instanceof NestedRuntimeException || ex instanceof HttpMediaTypeNotSupportedException) {

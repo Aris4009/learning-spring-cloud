@@ -23,6 +23,8 @@ import com.example.store.log.StoreLogUtil;
 import com.example.util.MyHttpHeaders;
 import com.example.util.MyRequestContext;
 
+import cn.hutool.core.util.StrUtil;
+
 @Component("restTemplateInternalRequestInterceptor")
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.INTERFACES)
 public class RestTemplateInternalRequestInterceptor implements ClientHttpRequestInterceptor {
@@ -49,10 +51,18 @@ public class RestTemplateInternalRequestInterceptor implements ClientHttpRequest
 				.startTime(localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() / 1000)
 				.startTimeStr(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).build();
 		try {
-			request.getHeaders().add(MyHttpHeaders.REQUEST_ID_HEADER, MyRequestContext.getRequestId());
-			request.getHeaders().add(MyHttpHeaders.TRACE_NO_HEADER, MyRequestContext.getTraceNoStr());
-			request.getHeaders().add(MyHttpHeaders.X_AUTH_TOKEN_HEADER, MyRequestContext.getXAuthToken());
-			request.getHeaders().add(MyHttpHeaders.AUTHORIZATION_HEADER, MyRequestContext.getAuthorization());
+			if (StrUtil.isNotEmpty(MyRequestContext.getRequestId())) {
+				request.getHeaders().add(MyHttpHeaders.REQUEST_ID_HEADER, MyRequestContext.getRequestId());
+			}
+			if (StrUtil.isNotEmpty(MyRequestContext.getTraceNoStr())) {
+				request.getHeaders().add(MyHttpHeaders.TRACE_NO_HEADER, MyRequestContext.getTraceNoStr());
+			}
+			if (StrUtil.isNotEmpty(MyRequestContext.getXAuthToken())) {
+				request.getHeaders().add(MyHttpHeaders.X_AUTH_TOKEN_HEADER, MyRequestContext.getXAuthToken());
+			}
+			if (StrUtil.isNotEmpty(MyRequestContext.getAuthorization())) {
+				request.getHeaders().add(MyHttpHeaders.AUTHORIZATION_HEADER, MyRequestContext.getAuthorization());
+			}
 			restTemplateLog.setRequestId(MyRequestContext.getRequestId());
 			restTemplateLog.setTraceNo(MyRequestContext.getTraceNo());
 			ClientHttpResponse clientHttpResponse = execution.execute(request, body);
@@ -71,8 +81,7 @@ public class RestTemplateInternalRequestInterceptor implements ClientHttpRequest
 			restTemplateLog.setExecTime(end - start);
 			restTemplateLog.setResponseStatus(responseStatus);
 			restTemplateLog.setResponseBody(responseBody);
-			log.info("[internal rest template]\n--------------------\n{}\n--------------------",
-					restTemplateLog.toString());
+			log.info("[internal rest template]\n--------------------\n{}\n--------------------", restTemplateLog);
 			StoreLogUtil.storeLog(storeLogList, restTemplateLog);
 		}
 	}

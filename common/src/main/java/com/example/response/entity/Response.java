@@ -5,6 +5,8 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.http.HttpStatus;
 
+import com.example.json.JSON;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -70,5 +72,10 @@ public final class Response<T> {
 
 	public static <T> Response<T> fail(String... msg) {
 		return fail(HttpStatus.INTERNAL_SERVER_ERROR.value(), msg);
+	}
+
+	@Override
+	public String toString() {
+		return JSON.toJSONString(this);
 	}
 }

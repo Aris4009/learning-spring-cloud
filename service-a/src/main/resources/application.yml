@@ -53,9 +53,10 @@ feign:
   client:
     config:
       default:
-        loggerLevel: basic
+        loggerLevel: none
         requestInterceptors:
           - com.example.remote.interceptor.MyRequestInterceptor
+    refresh-enabled: true
   circuitbreaker:
     enabled: true
   compression:
@@ -66,6 +67,10 @@ feign:
       useGzipDecoder: true
   okhttp:
     enabled: true
+  remote-service-b:
+    name: service-b
+    qualifiers: nacos-service-b
+    path: /api/v1/user/list
 
 request:
   pre: true

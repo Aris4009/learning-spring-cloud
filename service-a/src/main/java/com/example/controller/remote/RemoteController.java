@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.example.entity.User;
 import com.example.remote.client.IUserServiceClient;
+import com.example.remote.client.IUserServiceClientNacos;
 import com.example.remote.config.IRemoteConfig;
 import com.example.response.entity.Response;
 
@@ -22,17 +23,20 @@ public class RemoteController {
 
 	private IUserServiceClient userServiceClient;
 
+	private IUserServiceClientNacos userServiceClientNacos;
+
 	private RestTemplate restTemplateInternal;
 
 	private RestTemplate restTemplateNacos;
 
 	private IRemoteConfig remoteConfig;
 
-	public RemoteController(IUserServiceClient userServiceClient,
+	public RemoteController(IUserServiceClient userServiceClient, IUserServiceClientNacos userServiceClientNacos,
 			@Qualifier("restTemplateInternal") RestTemplate restTemplateInternal,
 			@Qualifier("restTemplateNacos") RestTemplate restTemplateNacos,
 			@Qualifier("remoteUrlConfig") IRemoteConfig remoteConfig) {
 		this.userServiceClient = userServiceClient;
+		this.userServiceClientNacos = userServiceClientNacos;
 		this.restTemplateInternal = restTemplateInternal;
 		this.restTemplateNacos = restTemplateNacos;
 		this.remoteConfig = remoteConfig;
@@ -51,6 +55,18 @@ public class RemoteController {
 	}
 
 	/**
+	 * 使用FeignClient,对接nacos访问内部接口
+	 *
+	 * @param user
+	 * @param request
+	 * @return
+	 */
+	@PostMapping("/nacos/user/list")
+	public Response<List<User>> nacosList(@RequestBody User user, HttpServletRequest request) {
+		return this.userServiceClientNacos.list(user);
+	}
+
+	/**
 	 * 直接使用RestTemplate访问内部接口，内部接口由nginx代理
 	 * 
 	 * @param user
@@ -63,7 +79,7 @@ public class RemoteController {
 	}
 
 	/**
-	 * 使用nacos服务发现访问内部接口
+	 * 使用restTemplate nacos服务发现访问内部接口
 	 * 
 	 * @param user
 	 * @return
@@ -73,4 +89,5 @@ public class RemoteController {
 		return restTemplateNacos.postForObject(remoteConfig.get("nacos/service-b/api/v1/user/list").toString(), user,
 				Response.class);
 	}
+
 }

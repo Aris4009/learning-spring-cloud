@@ -5,6 +5,7 @@ import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
@@ -26,9 +27,32 @@ public class RestTemplateInternalConfig {
 
 	private static final Duration DURATION_SECOND = Duration.ofSeconds(TIMEOUT);
 
+	/**
+	 * 直接访问内部接口
+	 * 
+	 * @param clientHttpRequestInterceptor
+	 * @return
+	 */
 	@Bean(name = "restTemplateInternal")
 	public RestTemplate restTemplateInternal(
 			@Qualifier("restTemplateInternalRequestInterceptor") ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
+		return restTemplate(clientHttpRequestInterceptor);
+	}
+
+	/**
+	 * 使用nacos服务发现访问内部接口
+	 * 
+	 * @param clientHttpRequestInterceptor
+	 * @return
+	 */
+	@LoadBalanced
+	@Bean(name = "restTemplateNacos")
+	public RestTemplate restTemplateNacos(
+			@Qualifier("restTemplateInternalRequestInterceptor") ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
+		return restTemplate(clientHttpRequestInterceptor);
+	}
+
+	private RestTemplate restTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
 		GsonHttpMessageConverter converter = new GsonHttpMessageConverter();
 		converter.setGson(JSON.gson);
 		converter.setDefaultCharset(StandardCharsets.UTF_8);

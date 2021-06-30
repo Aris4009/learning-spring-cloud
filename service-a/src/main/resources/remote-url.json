@@ -1,3 +1,4 @@
 {
-  "service-b/api/v1/user/list": "http://127.0.0.1:8002/api/v1/user/list"
+  "service-b/api/v1/user/list": "http://service-b.com:30000/api/v1/user/list",
+  "nacos/service-b/api/v1/user/list": "http://service-b/api/v1/user/list"
 }

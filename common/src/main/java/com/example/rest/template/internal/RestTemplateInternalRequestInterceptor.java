@@ -31,9 +31,9 @@ public class RestTemplateInternalRequestInterceptor implements ClientHttpRequest
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private final List<IStoreLog> storeLogList;
+	private List<IStoreLog> storeLogList;
 
-	public RestTemplateInternalRequestInterceptor(List<IStoreLog> storeLogList) {
+	public void setStoreLogList(List<IStoreLog> storeLogList) {
 		this.storeLogList = storeLogList;
 	}
 

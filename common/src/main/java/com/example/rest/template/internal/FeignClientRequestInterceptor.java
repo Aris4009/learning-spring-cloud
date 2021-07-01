@@ -30,9 +30,9 @@ public class FeignClientRequestInterceptor implements Interceptor {
 
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private final List<IStoreLog> storeLogList;
+	private List<IStoreLog> storeLogList;
 
-	public FeignClientRequestInterceptor(List<IStoreLog> storeLogList) {
+	public void setStoreLogList(List<IStoreLog> storeLogList) {
 		this.storeLogList = storeLogList;
 	}
 

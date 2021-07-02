@@ -44,6 +44,7 @@
         <git.commit.version>2.2.1</git.commit.version>
         <spring.cloud.alibaba.version>2021.1</spring.cloud.alibaba.version>
         <nacos.client.version>1.4.2</nacos.client.version>
+        <feign.okhttp.version>10.12</feign.okhttp.version>
     </properties>
 
     <dependencyManagement>
@@ -178,6 +179,11 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-crypto</artifactId>
                 <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.openfeign</groupId>
+                <artifactId>feign-okhttp</artifactId>
+                <version>${feign.okhttp.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

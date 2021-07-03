@@ -9,7 +9,7 @@ import com.example.entity.User;
 import com.example.remote.fallback.UserServiceClientFallback;
 import com.example.response.entity.Response;
 
-@FeignClient(name = "userServiceClient", url = "http://127.0.0.1:8002", qualifiers = "userServiceClient", fallback = UserServiceClientFallback.class)
+@FeignClient(name = "userServiceClient", url = "http://service-b.com:30000", qualifiers = "userServiceClient", fallback = UserServiceClientFallback.class)
 public interface IUserServiceClient {
 
 	@PostMapping("/api/v1/user/list")

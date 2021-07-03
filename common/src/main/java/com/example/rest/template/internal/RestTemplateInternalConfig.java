@@ -3,13 +3,11 @@ package com.example.rest.template.internal;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -29,31 +27,26 @@ public class RestTemplateInternalConfig {
 	 * 直接访问内部接口
 	 * 
 	 * @param okHttpClient
-	 * @param clientHttpRequestInterceptor
 	 * @return
 	 */
 	@Bean(name = "restTemplateInternal")
-	public RestTemplate restTemplateInternal(@Autowired OkHttpClient okHttpClient,
-			@Qualifier("restTemplateInternalRequestInterceptor") ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
-		return restTemplate(okHttpClient, clientHttpRequestInterceptor);
+	public RestTemplate restTemplateInternal(@Autowired OkHttpClient okHttpClient) {
+		return restTemplate(okHttpClient);
 	}
 
 	/**
 	 * 使用nacos服务发现访问内部接口
 	 * 
 	 * @param okHttpClient
-	 * @param clientHttpRequestInterceptor
 	 * @return
 	 */
 	@LoadBalanced
 	@Bean(name = "restTemplateNacos")
-	public RestTemplate restTemplateNacos(@Autowired OkHttpClient okHttpClient,
-			@Qualifier("restTemplateInternalRequestInterceptor") ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
-		return restTemplate(okHttpClient, clientHttpRequestInterceptor);
+	public RestTemplate restTemplateNacos(@Autowired OkHttpClient okHttpClient) {
+		return restTemplate(okHttpClient);
 	}
 
-	private RestTemplate restTemplate(OkHttpClient okHttpClient,
-			ClientHttpRequestInterceptor clientHttpRequestInterceptor) {
+	private RestTemplate restTemplate(OkHttpClient okHttpClient) {
 		GsonHttpMessageConverter converter = new GsonHttpMessageConverter();
 		converter.setGson(JSON.gson);
 		converter.setDefaultCharset(StandardCharsets.UTF_8);

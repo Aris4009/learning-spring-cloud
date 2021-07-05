@@ -7,14 +7,13 @@ import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 
 @Configuration
-@Order(value = Ordered.LOWEST_PRECEDENCE)
+@Order()
 public class OkHttpClientConfiguration {
 
 	private OkHttpClient okHttpClient;

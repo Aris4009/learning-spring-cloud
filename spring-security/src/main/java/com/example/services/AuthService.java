@@ -51,7 +51,7 @@ public class AuthService implements IAuthService {
 	@Override
 	public void verify(String token, String url) throws AuthenticationException {
 		if (StrUtil.isBlankIfStr(token) || StrUtil.isBlankIfStr(url)) {
-			throw new AuthenticationException(JwtUtils.UNANUTHORIZED);
+			throw new AuthenticationException(JwtUtils.UNAUTHORIZED);
 		}
 		UserDetail userDetail = this.jwtUtils.parse(token, new TypeToken<UserDetail>() {
 		});
@@ -60,7 +60,7 @@ public class AuthService implements IAuthService {
 		permission.setUrl(url);
 		int count = this.permissionDao.verifyPermissionByRoleId(permission);
 		if (count != 1) {
-			throw new AuthenticationException(JwtUtils.UNANUTHORIZED);
+			throw new AuthenticationException(JwtUtils.UNAUTHORIZED);
 		}
 	}
 }

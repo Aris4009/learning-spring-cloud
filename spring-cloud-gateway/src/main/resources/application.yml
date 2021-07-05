@@ -37,11 +37,11 @@ spring:
     gateway:
       security:
         enable: true
-        authenticate-url: http://localhost:8003/api/v1/authenticate
-        verify-url: http://localhost:8003/api/v1/verify/token
-        refresh-url: http://localhost:8003/api/v1/refresh/token
-        login-url: http://localhost:8003/api/v1/login
-        logout-url: http://localhost:8003/api/v1/logout
+        authenticate-url: http://spring-security/api/v1/authenticate
+        verify-url: http://spring-security/api/v1/verify/token
+        refresh-url: http://spring-security/api/v1/refresh/token
+        login-url: http://spring-security/api/v1/login
+        logout-url: http://spring-security/api/v1/logout
         white-url-list-path: white-url-list.json
         http-client:
           connection-timeout-second: 5
@@ -60,13 +60,13 @@ spring:
         compression: true
       routes:
         - id: spring-security
-          uri: http://localhost:8003
+          uri: lb://spring-security
           predicates:
             - Path=/spring-security/api/**
             - Method=GET,POST
 
         - id: service-a
-          uri: http://localhost:8001
+          uri: http://service-a
           predicates:
             - Path=/service-a/api/**
             - Method=GET,POST
@@ -77,12 +77,12 @@ spring:
                 fallbackUri: forward:/api/circuit/breaker/fallback
 
         - id: service-a-websocket
-          uri: ws://localhost:8001
+          uri: lb:ws://service-a
           predicates:
             - Path=/service-a/websocket/**
 
         - id: service-b-slow
-          uri: http://localhost:8002
+          uri: lb://service-b
           predicates:
             - Path=/service-b/api/v1/test/slow
             - Method=GET,POST
@@ -93,7 +93,7 @@ spring:
                 fallbackUri: forward:/api/circuit/breaker/fallback
 
         - id: service-b-retry
-          uri: http://localhost:8002
+          uri: lb://service-b
           predicates:
             - Path=/service-b/api/v1/test/retry
             - Method=GET,POST
@@ -110,7 +110,7 @@ spring:
                   basedOnPreviousValue: false
 
         - id: service-b-rate-limiter
-          uri: http://localhost:8002
+          uri: lb://service-b
           predicates:
             - Path=/service-b/api/v1/test/rate/limiter
             - Method=GET,POST
@@ -159,6 +159,15 @@ resilience4j:
       service-b-circuit-breaker:
         baseConfig: default
 
+remote-url:
+  internal:
+    #file/server
+    type: server
+    serverAddr: http://test.nacos.com:80
+    namespace: learning-spring-cloud-dev
+    dataId: white-url-list.json
+    group: DEFAULT_GROUP
+    path:
     #重试机制,spring-cloud-gateway不支持该重试机制，可使用spring-cloud-gateway重试机制
   #    retry:
   #      configs:

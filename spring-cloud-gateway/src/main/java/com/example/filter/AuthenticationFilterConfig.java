@@ -3,21 +3,27 @@ package com.example.filter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PreDestroy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ServerWebExchange;
 
 import cn.hutool.core.io.resource.ClassPathResource;
@@ -25,9 +31,6 @@ import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import reactor.core.publisher.Mono;
 
 /**
@@ -37,9 +40,11 @@ import reactor.core.publisher.Mono;
 @ConditionalOnProperty(name = "spring.cloud.gateway.security.enable", havingValue = "true")
 public class AuthenticationFilterConfig {
 
-	private static final int BUFFER_SIZE = 4096;
+	private OkHttpClient okHttpClient;
 
-	private static final int CAPACITY = 4096;
+	private static final String CONTENT_TYPE = "Content-Type";
+
+	private static final String CONTENT_TYPE_VALUE = "application/json";
 
 	/**
 	 * 白名单
@@ -49,6 +54,7 @@ public class AuthenticationFilterConfig {
 	 * @return 白名单列表
 	 */
 	@Bean
+	@RefreshScope
 	public List<WhiteUrl> whiteUrlList(@Value("${spring.cloud.gateway.security.white-url-list-path}") String path) {
 		ClassPathResource classPathResource = new ClassPathResource(path);
 		String content = classPathResource.readUtf8Str();
@@ -84,25 +90,42 @@ public class AuthenticationFilterConfig {
 	public OkHttpClient httpClient(
 			@Value("${spring.cloud.gateway.security.http-client.connection-timeout-second}") long connectionTimeout,
 			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") long readTimeout) {
-		return new OkHttpClient().newBuilder().connectTimeout(connectionTimeout, TimeUnit.SECONDS)
+		this.okHttpClient = new OkHttpClient().newBuilder().connectTimeout(connectionTimeout, TimeUnit.SECONDS)
 				.readTimeout(readTimeout, TimeUnit.SECONDS).build();
+		return okHttpClient;
+	}
+
+	@PreDestroy
+	public void destroy() {
+		if (this.okHttpClient != null) {
+			this.okHttpClient.dispatcher().executorService().shutdown();
+			this.okHttpClient.connectionPool().evictAll();
+		}
+	}
+
+	@LoadBalanced
+	@Bean
+	public RestTemplate restTemplate(@Autowired OkHttpClient okHttpClient) {
+		return new RestTemplateBuilder().requestFactory(() -> {
+			return new OkHttp3ClientHttpRequestFactory(okHttpClient);
+		}).defaultHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE).build();
 	}
 
 	/**
 	 * 全局认证过滤器
 	 * 
-	 * @param httpClient
-	 *            httpClient
+	 * @param restTemplate
+	 *            restTemplate
 	 * @param whiteUrlList
 	 *            白名单
 	 * @param authenticationUrl
 	 *            认证url
 	 * @return 全局认证过滤器
 	 */
-	@Bean(destroyMethod = "destroy")
-	public AuthenticationFilter authenticationFilter(@Autowired OkHttpClient httpClient,
+	@Bean
+	public AuthenticationFilter authenticationFilter(@Autowired RestTemplate restTemplate,
 			@Autowired List<WhiteUrl> whiteUrlList, @Autowired AuthenticationUrl authenticationUrl) {
-		return new AuthenticationFilter(httpClient, whiteUrlList, authenticationUrl);
+		return new AuthenticationFilter(restTemplate, whiteUrlList, authenticationUrl);
 	}
 
 	static class WhiteUrl {
@@ -172,7 +195,7 @@ public class AuthenticationFilterConfig {
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
-		private final OkHttpClient httpClient;
+		private final RestTemplate restTemplate;
 
 		private final List<WhiteUrl> whiteUrlList;
 
@@ -198,9 +221,9 @@ public class AuthenticationFilterConfig {
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(OkHttpClient httpClient, List<WhiteUrl> whiteUrlList,
+		public AuthenticationFilter(RestTemplate restTemplate, List<WhiteUrl> whiteUrlList,
 				AuthenticationUrl authenticationUrl) {
-			this.httpClient = httpClient;
+			this.restTemplate = restTemplate;
 			this.whiteUrlList = Objects.requireNonNullElseGet(whiteUrlList, ArrayList::new);
 			this.authenticationUrl = authenticationUrl;
 		}
@@ -291,9 +314,8 @@ public class AuthenticationFilterConfig {
 		 * @return true:两个请求头至少缺少一个 false:两个请求头都包含
 		 */
 		private boolean checkHeaders(ServerWebExchange exchange) {
-			boolean flag = StrUtil.isBlankIfStr(xAuthTokenHeader(exchange))
+			return StrUtil.isBlankIfStr(xAuthTokenHeader(exchange))
 					|| StrUtil.isBlankIfStr(authorizationHeader(exchange));
-			return flag;
 		}
 
 		/**
@@ -365,24 +387,26 @@ public class AuthenticationFilterConfig {
 				String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
 				String xAuthTokenHeader = xAuthTokenHeader(exchange);
 				String authorizationHeader = authorizationHeader(exchange);
+
+				HttpHeaders headers = new HttpHeaders();
+				headers.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+				headers.add(AUTHORIZATION_HEADER, authorizationHeader);
+				headers.add(REQUEST_ID_HEADER, requestId);
+				headers.add(TRACE_NO_HEADER, DEFAULT_TRACE_NO);
+
 				Map<String, String> authParam = new HashMap<>();
 				authParam.put("url", exchange.getRequest().getURI().getRawPath());
+				HttpEntity<String> httpEntity = new HttpEntity<>(JSONUtil.toJsonStr(authParam), headers);
 
-				RequestBody securityRequestBody = RequestBody.create(JSONUtil.toJsonStr(authParam),
-						okhttp3.MediaType.get(MediaType.APPLICATION_JSON_VALUE));
-				Request securityRequest = new Request.Builder().url(this.authenticationUrl.getAuthenticateUrl())
-						.addHeader(HEADER_X_AUTH_TOKEN, xAuthTokenHeader)
-						.addHeader(AUTHORIZATION_HEADER, authorizationHeader).addHeader(REQUEST_ID_HEADER, requestId)
-						.addHeader(TRACE_NO_HEADER, DEFAULT_TRACE_NO).post(securityRequestBody).build();
-				try (Response securityResponse = this.httpClient.newCall(securityRequest).execute()) {
-					response = JSONUtil.toBean(securityResponse.body().toString(),
-							new TypeReference<com.example.response.entity.Response<Void>>() {
-							}, false);
-					request.getHeaders().add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-					request.getHeaders().add(AUTHORIZATION_HEADER, authorizationHeader);
-					request.getHeaders().add(REQUEST_ID_HEADER, securityRequest.header(REQUEST_ID_HEADER));
-					request.getHeaders().add(TRACE_NO_HEADER, securityResponse.header(TRACE_NO_HEADER));
-				}
+				ResponseEntity<String> responseEntity = this.restTemplate
+						.postForEntity(this.authenticationUrl.getAuthenticateUrl(), httpEntity, String.class);
+				response = JSONUtil.toBean(responseEntity.getBody(),
+						new TypeReference<com.example.response.entity.Response<Void>>() {
+						}, false);
+				request.getHeaders().add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+				request.getHeaders().add(AUTHORIZATION_HEADER, authorizationHeader);
+				request.getHeaders().add(REQUEST_ID_HEADER, requestId);
+				request.getHeaders().add(TRACE_NO_HEADER, responseEntity.getHeaders().getFirst(TRACE_NO_HEADER));
 			} catch (Exception e) {
 				log.debug(e.getMessage(), e);
 			}
@@ -392,13 +416,6 @@ public class AuthenticationFilterConfig {
 		@Override
 		public int getOrder() {
 			return ORDERED;
-		}
-
-		public void destroy() {
-			if (this.httpClient != null) {
-				this.httpClient.dispatcher().executorService().shutdown();
-				this.httpClient.connectionPool().evictAll();
-			}
 		}
 	}
 }

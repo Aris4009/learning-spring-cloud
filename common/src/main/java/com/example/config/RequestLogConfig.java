@@ -1,6 +1,7 @@
 package com.example.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.Data;
  * 请求日志配置
  */
 @Configuration
+@RefreshScope
 @Data
 public class RequestLogConfig {
 

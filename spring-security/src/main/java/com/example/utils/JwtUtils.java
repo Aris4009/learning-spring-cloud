@@ -41,7 +41,7 @@ public class JwtUtils {
 
 	public static final String INVALID_TOKEN = "invalid token";
 
-	public static final String UNANUTHORIZED = "unauthorized";
+	public static final String UNAUTHORIZED = "unauthorized";
 
 	public JwtUtils(Key key, JwtProp jwtProp, HttpSession httpSession) {
 		this.key = key;

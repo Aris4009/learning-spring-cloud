@@ -21,15 +21,15 @@ import com.example.response.entity.Response;
 @RequestMapping("/api/v1")
 public class RemoteController {
 
-	private IUserServiceClient userServiceClient;
+	private final IUserServiceClient userServiceClient;
 
-	private IUserServiceClientNacos userServiceClientNacos;
+	private final IUserServiceClientNacos userServiceClientNacos;
 
-	private RestTemplate restTemplateInternal;
+	private final RestTemplate restTemplateInternal;
 
-	private RestTemplate restTemplateNacos;
+	private final RestTemplate restTemplateNacos;
 
-	private IRemoteConfig remoteConfig;
+	private final IRemoteConfig remoteConfig;
 
 	public RemoteController(IUserServiceClient userServiceClient, IUserServiceClientNacos userServiceClientNacos,
 			@Qualifier("restTemplateInternal") RestTemplate restTemplateInternal,

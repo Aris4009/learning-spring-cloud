@@ -3,6 +3,7 @@ package com.example.response.entity;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 import lombok.AllArgsConstructor;
@@ -23,6 +24,8 @@ public final class Response<T> {
 	private int status;
 
 	private String timestamp;
+
+	private transient HttpHeaders headers;
 
 	@SuppressWarnings("unchecked")
 	public static <T> Response<T> fail(T data, int status, String... msg) {
@@ -67,5 +70,4 @@ public final class Response<T> {
 	public static <T> Response<T> ok(String... msg) {
 		return ok(null, msg);
 	}
-
 }

@@ -3,14 +3,12 @@ package com.example.filter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -18,29 +16,37 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import org.springframework.http.*;
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.example.response.entity.Response;
 
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import okhttp3.OkHttpClient;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import lombok.Data;
+import lombok.Getter;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 /**
  * 全局认证过滤器
  */
 @Configuration
 @ConditionalOnProperty(name = "spring.cloud.gateway.security.enable", havingValue = "true")
+@RefreshScope
 public class AuthenticationFilterConfig {
-
-	private OkHttpClient okHttpClient;
 
 	private static final String CONTENT_TYPE = "Content-Type";
 
@@ -54,7 +60,6 @@ public class AuthenticationFilterConfig {
 	 * @return 白名单列表
 	 */
 	@Bean
-	@RefreshScope
 	public List<WhiteUrl> whiteUrlList(@Value("${spring.cloud.gateway.security.white-url-list-path}") String path) {
 		ClassPathResource classPathResource = new ClassPathResource(path);
 		String content = classPathResource.readUtf8Str();
@@ -86,36 +91,22 @@ public class AuthenticationFilterConfig {
 		return new AuthenticationUrl(authenticateUrl, verifyUrl, refreshUrl, loginUrl, logoutUrl);
 	}
 
-	@Bean
-	public OkHttpClient httpClient(
-			@Value("${spring.cloud.gateway.security.http-client.connection-timeout-second}") long connectionTimeout,
-			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") long readTimeout) {
-		this.okHttpClient = new OkHttpClient().newBuilder().connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-				.readTimeout(readTimeout, TimeUnit.SECONDS).build();
-		return okHttpClient;
-	}
-
-	@PreDestroy
-	public void destroy() {
-		if (this.okHttpClient != null) {
-			this.okHttpClient.dispatcher().executorService().shutdown();
-			this.okHttpClient.connectionPool().evictAll();
-		}
-	}
-
+	@Bean("client")
 	@LoadBalanced
-	@Bean
-	public RestTemplate restTemplate(@Autowired OkHttpClient okHttpClient) {
-		return new RestTemplateBuilder().requestFactory(() -> {
-			return new OkHttp3ClientHttpRequestFactory(okHttpClient);
-		}).defaultHeader(CONTENT_TYPE, CONTENT_TYPE_VALUE).build();
+	public WebClient webClient(
+			@Value("${spring.cloud.gateway.security.http-client.connection-timeout-second}") int connectionTimeout,
+			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") int readTimeout) {
+		HttpClient client = HttpClient.create().headers(headers -> headers.add(CONTENT_TYPE, CONTENT_TYPE_VALUE))
+				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeout * 1000)
+				.doOnConnected(con -> con.addHandler(new ReadTimeoutHandler(readTimeout, TimeUnit.SECONDS)));
+		return WebClient.builder().clientConnector(new ReactorClientHttpConnector(client)).build();
 	}
 
 	/**
 	 * 全局认证过滤器
 	 * 
-	 * @param restTemplate
-	 *            restTemplate
+	 * @param webClient
+	 *            webClient
 	 * @param whiteUrlList
 	 *            白名单
 	 * @param authenticationUrl
@@ -123,34 +114,20 @@ public class AuthenticationFilterConfig {
 	 * @return 全局认证过滤器
 	 */
 	@Bean
-	public AuthenticationFilter authenticationFilter(@Autowired RestTemplate restTemplate,
+	public AuthenticationFilter authenticationFilter(@Qualifier("client") WebClient webClient,
 			@Autowired List<WhiteUrl> whiteUrlList, @Autowired AuthenticationUrl authenticationUrl) {
-		return new AuthenticationFilter(restTemplate, whiteUrlList, authenticationUrl);
+		return new AuthenticationFilter(webClient, whiteUrlList, authenticationUrl);
 	}
 
+	@Data
 	static class WhiteUrl {
 
 		private String name;
 
 		private String url;
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public String getUrl() {
-			return url;
-		}
-
-		public void setUrl(String url) {
-			this.url = url;
-		}
 	}
 
+	@Getter
 	static class AuthenticationUrl {
 
 		private final String authenticateUrl;
@@ -171,31 +148,11 @@ public class AuthenticationFilterConfig {
 			this.loginUrl = loginUrl;
 			this.logoutUrl = logoutUrl;
 		}
-
-		public String getAuthenticateUrl() {
-			return authenticateUrl;
-		}
-
-		public String getVerifyUrl() {
-			return verifyUrl;
-		}
-
-		public String getRefreshUrl() {
-			return refreshUrl;
-		}
-
-		public String getLoginUrl() {
-			return loginUrl;
-		}
-
-		public String getLogoutUrl() {
-			return logoutUrl;
-		}
 	}
 
 	static class AuthenticationFilter implements GlobalFilter, Ordered {
 
-		private final RestTemplate restTemplate;
+		private final WebClient webClient;
 
 		private final List<WhiteUrl> whiteUrlList;
 
@@ -221,9 +178,9 @@ public class AuthenticationFilterConfig {
 
 		private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-		public AuthenticationFilter(RestTemplate restTemplate, List<WhiteUrl> whiteUrlList,
+		public AuthenticationFilter(WebClient webClient, List<WhiteUrl> whiteUrlList,
 				AuthenticationUrl authenticationUrl) {
-			this.restTemplate = restTemplate;
+			this.webClient = webClient;
 			this.whiteUrlList = Objects.requireNonNullElseGet(whiteUrlList, ArrayList::new);
 			this.authenticationUrl = authenticationUrl;
 		}
@@ -233,7 +190,7 @@ public class AuthenticationFilterConfig {
 			setRequestId(exchange);
 			ServerHttpRequest request = exchange.getRequest();
 			// 非http或https请求，不执行鉴权
-			if (checkScheme(exchange) || checkWhiteUrl(exchange)) {
+			if (!checkScheme(exchange) || checkWhiteUrl(exchange)) {
 				log.debug("url {} skip authenticate", request.getURI().getRawPath());
 				return chain.filter(exchange);
 			}
@@ -261,26 +218,25 @@ public class AuthenticationFilterConfig {
 		 *            ServerWebExchange
 		 */
 		private void setRequestId(ServerWebExchange exchange) {
-			ServerHttpRequest request = exchange.getRequest();
 			String requestId = UUID.randomUUID().toString().replace("-", "");
-			request = exchange.getRequest().mutate().headers(httpHeaders -> {
+			ServerHttpRequest request = exchange.getRequest().mutate().headers(httpHeaders -> {
 				httpHeaders.add(REQUEST_ID_HEADER, requestId);
 			}).build();
 			exchange.mutate().request(request).build();
 		}
 
 		/**
-		 * 检查非http/https请求
+		 * 检查http/https请求
 		 * 
 		 * @param exchange
 		 *            ServerWebExchange
-		 * @return true:非http/https false:http/https请求
+		 * @return true:http/https false:非http/https请求
 		 */
 		private boolean checkScheme(ServerWebExchange exchange) {
 			boolean flag = false;
 			ServerHttpRequest request = exchange.getRequest();
 			String scheme = request.getURI().getScheme();
-			if (!"http".equals(scheme) && !"https".equals(scheme)) {
+			if ("http".equals(scheme) || "https".equals(scheme)) {
 				flag = true;
 			}
 			return flag;
@@ -380,35 +336,37 @@ public class AuthenticationFilterConfig {
 		 *            ServerWebExchange
 		 * @return 请求结果
 		 */
-		private com.example.response.entity.Response<Void> authentication(ServerWebExchange exchange) {
-			com.example.response.entity.Response<Void> response = null;
+		private Response<Void> authentication(ServerWebExchange exchange) {
+			Response<Void> response = null;
 			try {
 				ServerHttpRequest request = exchange.getRequest();
 				String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
 				String xAuthTokenHeader = xAuthTokenHeader(exchange);
 				String authorizationHeader = authorizationHeader(exchange);
 
-				HttpHeaders headers = new HttpHeaders();
-				headers.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-				headers.add(AUTHORIZATION_HEADER, authorizationHeader);
-				headers.add(REQUEST_ID_HEADER, requestId);
-				headers.add(TRACE_NO_HEADER, DEFAULT_TRACE_NO);
-
 				Map<String, String> authParam = new HashMap<>();
 				authParam.put("url", exchange.getRequest().getURI().getRawPath());
-				HttpEntity<String> httpEntity = new HttpEntity<>(JSONUtil.toJsonStr(authParam), headers);
 
-				ResponseEntity<String> responseEntity = this.restTemplate
-						.postForEntity(this.authenticationUrl.getAuthenticateUrl(), httpEntity, String.class);
-				response = JSONUtil.toBean(responseEntity.getBody(),
-						new TypeReference<com.example.response.entity.Response<Void>>() {
-						}, false);
+				ResponseEntity<String> responseEntity = this.webClient.post()
+						.uri(this.authenticationUrl.getAuthenticateUrl()).headers((headers -> {
+							headers.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+							headers.add(AUTHORIZATION_HEADER, authorizationHeader);
+							headers.add(REQUEST_ID_HEADER, requestId);
+							headers.add(TRACE_NO_HEADER, DEFAULT_TRACE_NO);
+						})).bodyValue(authParam).retrieve().toEntity(String.class).block();
+				if (responseEntity == null) {
+					throw new ResourceAccessException(
+							"can't access resource in " + this.authenticationUrl.getAuthenticateUrl());
+				}
+				response = JSONUtil.toBean(responseEntity.getBody(), new TypeReference<>() {
+				}, false);
 				request.getHeaders().add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
 				request.getHeaders().add(AUTHORIZATION_HEADER, authorizationHeader);
 				request.getHeaders().add(REQUEST_ID_HEADER, requestId);
 				request.getHeaders().add(TRACE_NO_HEADER, responseEntity.getHeaders().getFirst(TRACE_NO_HEADER));
 			} catch (Exception e) {
-				log.debug(e.getMessage(), e);
+				log.info("error msg:{},ex:{},response:{},", e.getMessage(), e, JSONUtil.toJsonStr(response));
+				response = null;
 			}
 			return response;
 		}

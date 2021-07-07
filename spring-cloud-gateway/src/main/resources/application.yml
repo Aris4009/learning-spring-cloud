@@ -45,7 +45,7 @@ spring:
         white-url-list-path: white-url-list.json
         http-client:
           connection-timeout-second: 5
-          read-time-second: 5
+          read-timeout-second: 5
       enabled: true
       default-filters:
         - StripPrefix=1
@@ -66,7 +66,7 @@ spring:
             - Method=GET,POST
 
         - id: service-a
-          uri: http://service-a
+          uri: lb://service-a
           predicates:
             - Path=/service-a/api/**
             - Method=GET,POST

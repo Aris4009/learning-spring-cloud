@@ -9,28 +9,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 
 import com.example.response.entity.Response;
 
 import cn.hutool.core.io.resource.ClassPathResource;
-import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import io.netty.channel.ChannelOption;
@@ -92,14 +90,15 @@ public class AuthenticationFilterConfig {
 	}
 
 	@Bean("client")
-	@LoadBalanced
 	public WebClient webClient(
 			@Value("${spring.cloud.gateway.security.http-client.connection-timeout-second}") int connectionTimeout,
-			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") int readTimeout) {
+			@Value("${spring.cloud.gateway.security.http-client.read-timeout-second}") int readTimeout,
+			@Autowired ReactorLoadBalancerExchangeFilterFunction reactorLoadBalancerExchangeFilterFunction) {
 		HttpClient client = HttpClient.create().headers(headers -> headers.add(CONTENT_TYPE, CONTENT_TYPE_VALUE))
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeout * 1000)
 				.doOnConnected(con -> con.addHandler(new ReadTimeoutHandler(readTimeout, TimeUnit.SECONDS)));
-		return WebClient.builder().clientConnector(new ReactorClientHttpConnector(client)).build();
+		return WebClient.builder().filter(reactorLoadBalancerExchangeFilterFunction)
+				.clientConnector(new ReactorClientHttpConnector(client)).build();
 	}
 
 	/**
@@ -186,8 +185,9 @@ public class AuthenticationFilterConfig {
 		}
 
 		@Override
-		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-			setRequestId(exchange);
+		@SuppressWarnings("unchecked")
+		public Mono<Void> filter(ServerWebExchange ex, GatewayFilterChain chain) {
+			ServerWebExchange exchange = setRequestId(ex);
 			ServerHttpRequest request = exchange.getRequest();
 			// 非http或https请求，不执行鉴权
 			if (!checkScheme(exchange) || checkWhiteUrl(exchange)) {
@@ -201,28 +201,37 @@ public class AuthenticationFilterConfig {
 				return invalidToken(exchange);
 			}
 
-			com.example.response.entity.Response<Void> httpResponse = authentication(exchange);
-			if (httpResponse == null) {
-				return serviceUnavailable(exchange);
-			}
-			if (httpResponse.getStatus() != HttpStatus.OK.value()) {
-				return invalidToken(exchange);
-			}
-			return chain.filter(exchange.mutate().request(request).build());
+			Mono<Response> mono = authentication(exchange);
+			return mono.flatMap((httpResponse -> {
+				if (httpResponse == null) {
+					return serviceUnavailable(exchange);
+				}
+				if (httpResponse.getStatus() != HttpStatus.OK.value()) {
+					return invalidToken(exchange);
+				}
+				ServerHttpRequest passedRequest = request.mutate().headers((headers) -> {
+					headers.add(HEADER_X_AUTH_TOKEN, httpResponse.getHeaders().getFirst(HEADER_X_AUTH_TOKEN));
+					headers.add(AUTHORIZATION_HEADER, httpResponse.getHeaders().getFirst(AUTHORIZATION_HEADER));
+					headers.add(REQUEST_ID_HEADER, httpResponse.getHeaders().getFirst(REQUEST_ID_HEADER));
+					headers.add(TRACE_NO_HEADER, httpResponse.getHeaders().getFirst(TRACE_NO_HEADER));
+				}).build();
+				return chain.filter(exchange.mutate().request(passedRequest).build());
+			}));
 		}
 
 		/**
 		 * 设置requestId
-		 *
+		 * 
 		 * @param exchange
-		 *            ServerWebExchange
+		 *            exchange
+		 * @return ServerWebExchange
 		 */
-		private void setRequestId(ServerWebExchange exchange) {
+		private ServerWebExchange setRequestId(ServerWebExchange exchange) {
 			String requestId = UUID.randomUUID().toString().replace("-", "");
 			ServerHttpRequest request = exchange.getRequest().mutate().headers(httpHeaders -> {
 				httpHeaders.add(REQUEST_ID_HEADER, requestId);
 			}).build();
-			exchange.mutate().request(request).build();
+			return exchange.mutate().request(request).build();
 		}
 
 		/**
@@ -284,8 +293,7 @@ public class AuthenticationFilterConfig {
 		private Mono<Void> serviceUnavailable(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-			com.example.response.entity.Response<Void> r = com.example.response.entity.Response.fail(
-					HttpStatus.SERVICE_UNAVAILABLE.value(),
+			Response<Void> r = Response.fail(HttpStatus.SERVICE_UNAVAILABLE.value(),
 					HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase().toLowerCase());
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
@@ -300,8 +308,7 @@ public class AuthenticationFilterConfig {
 		private Mono<Void> invalidToken(ServerWebExchange exchange) {
 			ServerHttpResponse response = exchange.getResponse();
 			response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-			com.example.response.entity.Response<Void> r = com.example.response.entity.Response
-					.fail(INVALID_TOKEN_STATUS, INVALID_TOKEN);
+			Response<Void> r = Response.fail(INVALID_TOKEN_STATUS, INVALID_TOKEN);
 			return response.writeWith(Mono.just(response.bufferFactory().wrap(JSONUtil.toJsonStr(r).getBytes())));
 		}
 
@@ -336,8 +343,9 @@ public class AuthenticationFilterConfig {
 		 *            ServerWebExchange
 		 * @return 请求结果
 		 */
-		private Response<Void> authentication(ServerWebExchange exchange) {
-			Response<Void> response = null;
+		@SuppressWarnings("unchecked")
+		private Mono<Response> authentication(ServerWebExchange exchange) {
+			Mono<Response> res;
 			try {
 				ServerHttpRequest request = exchange.getRequest();
 				String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
@@ -347,28 +355,31 @@ public class AuthenticationFilterConfig {
 				Map<String, String> authParam = new HashMap<>();
 				authParam.put("url", exchange.getRequest().getURI().getRawPath());
 
-				ResponseEntity<String> responseEntity = this.webClient.post()
-						.uri(this.authenticationUrl.getAuthenticateUrl()).headers((headers -> {
-							headers.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-							headers.add(AUTHORIZATION_HEADER, authorizationHeader);
-							headers.add(REQUEST_ID_HEADER, requestId);
-							headers.add(TRACE_NO_HEADER, DEFAULT_TRACE_NO);
-						})).bodyValue(authParam).retrieve().toEntity(String.class).block();
-				if (responseEntity == null) {
-					throw new ResourceAccessException(
-							"can't access resource in " + this.authenticationUrl.getAuthenticateUrl());
-				}
-				response = JSONUtil.toBean(responseEntity.getBody(), new TypeReference<>() {
-				}, false);
-				request.getHeaders().add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
-				request.getHeaders().add(AUTHORIZATION_HEADER, authorizationHeader);
-				request.getHeaders().add(REQUEST_ID_HEADER, requestId);
-				request.getHeaders().add(TRACE_NO_HEADER, responseEntity.getHeaders().getFirst(TRACE_NO_HEADER));
+				res = this.webClient.post().uri(this.authenticationUrl.getAuthenticateUrl()).headers((headers -> {
+					headers.add(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+					headers.add(AUTHORIZATION_HEADER, authorizationHeader);
+					headers.add(REQUEST_ID_HEADER, requestId);
+					headers.add(TRACE_NO_HEADER, DEFAULT_TRACE_NO);
+				})).bodyValue(authParam).exchangeToMono(response -> {
+					if (response.statusCode().equals(HttpStatus.OK)) {
+						return response.bodyToMono(Response.class).map(r -> {
+							HttpHeaders headers = new HttpHeaders();
+							headers.set(HEADER_X_AUTH_TOKEN, xAuthTokenHeader);
+							headers.set(AUTHORIZATION_HEADER, authorizationHeader);
+							headers.set(REQUEST_ID_HEADER, requestId);
+							headers.set(TRACE_NO_HEADER, response.headers().asHttpHeaders().getFirst(TRACE_NO_HEADER));
+							r.setHeaders(headers);
+							return r;
+						});
+					} else {
+						return response.createException().map(map -> Response.fail(map.getCause().getMessage()));
+					}
+				});
 			} catch (Exception e) {
-				log.info("error msg:{},ex:{},response:{},", e.getMessage(), e, JSONUtil.toJsonStr(response));
-				response = null;
+				log.info("error msg:{},ex:{}", e.getMessage(), e);
+				res = Mono.just(Response.fail("can't access resource " + this.authenticationUrl.getAuthenticateUrl()));
 			}
-			return response;
+			return res;
 		}
 
 		@Override

@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.example.response.entity.Response;
 
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/nacos")
@@ -22,11 +22,18 @@ public class NacosConfigController {
 	}
 
 	@PostMapping("/list")
-	public Response<Object> list() {
+	public Mono<Response> list() {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.set("username", "admin");
-		Object object = this.webClient.post().uri("http://service-b/ap1/v1/user/list").bodyValue(jsonObject).retrieve()
-				.bodyToMono(Object.class).block();
-		return Response.ok(JSONUtil.toJsonStr(object));
+		return this.webClient.post().uri("http://service-b/api/v1/user/list").bodyValue(jsonObject).retrieve()
+				.bodyToMono(Response.class);
+	}
+
+	@PostMapping("/list2")
+	public Mono<Response> list2() {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.set("username", "admin");
+		return this.webClient.post().uri("lb://service-b/api/v1/user/list").bodyValue(jsonObject).retrieve()
+				.bodyToMono(Response.class);
 	}
 }
